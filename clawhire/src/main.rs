@@ -1,325 +1,546 @@
-//! Entry point for ClawHire application.
+//! Core module for ClawHire[span_0](start_span)[span_0](end_span)
 //!
-//! ClawHire is a production-grade self-hosted AI blockchain freelancer built on top
-//! of the ZeroClaw runtime. This module bootstraps the system, loads configuration,
-//! initializes services, payments, and reporting engines, and routes CLI commands.
+//! This module contains the application runtime, shared state, global configuration,
+//! job models, and event system.[span_1](start_span)[span_1](end_span)
 
-mod core;
-mod payments;
-mod reports;
-mod services;
-
-use crate::core::{App, EventType, ServiceType};
-use crate::payments::PaymentEngine;
-use crate::reports::ReportGenerator;
-use crate::services::{
-    AnthropicProvider, OpenAIProvider, OpenRouterProvider, OnChainIntelligenceService,
-    ServiceRegistry, SmartContractReviewService,
-};
 use anyhow::{Context, Result};
-use clap::{Parser, Subcommand};
-use log::{error, info};
-use std::path::PathBuf;
-use std::sync::Arc;
-use tokio::signal;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use chrono::{DateTime, Utc};
+use config::{Config, Environment, File};
+use log::{error, info, LevelFilter};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, path::Path, sync::Arc};
+use tokio::sync::RwLock;
+use uuid::Uuid;
+use thiserror::Error;
 
 // ============================================================================
-// CLI Definitions
+// Errors
 // ============================================================================
 
-/// ClawHire: Self-hosted AI Blockchain Freelancer
-#[derive(Parser, Debug)]
-#[command(name = "clawhire")]
-#[command(author = "ClawHire Architecture Team")]
-#[command(version = "1.0.0")]
-#[command(about = "Production-grade self-hosted AI blockchain freelancer", long_about = None)]
-pub struct Cli {
-    #[command(subcommand)]
-    pub command: Commands,
-}
-
-/// Available CLI commands for managing ClawHire
-#[derive(Subcommand, Debug)]
-pub enum Commands {
-    /// Start the ClawHire background daemon and payment monitor
-    Start,
-    /// Run a single execution pass (synchronous worker mode)
-    Run,
-    /// Output the version and build details
-    Version,
-    /// Perform a detailed system health check
-    Health,
-    /// List all registered services and pricing
-    Services,
-    /// List all generated reports
-    Reports,
-    /// List all tracked invoices and payment states
-    Invoices,
+/// Core errors for ClawHire application operations.[span_2](start_span)[span_2](end_span)
+#[derive(Error, Debug)]
+pub enum CoreError {
+    #[error("Job not found: {0}")]
+    JobNotFound(String),
+    #[error("Invoice not found: {0}")]
+    InvoiceNotFound(String),
+    #[error("Report not found: {0}")]
+    ReportNotFound(String),
+    #[error("Configuration error: {0}")]
+    ConfigError(String),
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
 }
 
 // ============================================================================
-// Logging & Initializers
+// Enums[span_3](start_span)[span_3](end_span)
 // ============================================================================
 
-/// Initializes tracing subscriber with environment or default filters.
-fn init_logging() -> Result<()> {
-    let env_filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("info,clawhire=debug"));
-
-    tracing_subscriber::registry()
-        .with(env_filter)
-        .with(tracing_subscriber::fmt::layer())
-        .try_init()
-        .map_err(|e| anyhow::anyhow!("Failed to initialize logging: {}", e))?;
-
-    Ok(())
+/// Represents the current state of a Job in the system.[span_4](start_span)[span_4](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum JobStatus {
+    Created,
+    Quoted,
+    AwaitingPayment,
+    PaymentConfirmed,
+    Executing,
+    GeneratingReport,
+    Completed,
+    Archived,
 }
 
-/// Displays the startup banner summarizing application state.
-fn display_startup_banner(app: &App) {
-    let config = &app.state.config;
-    info!("====================================");
-    info!("          ClawHire Engine           ");
-    info!("Version:     1.0.0");
-    info!("Runtime:     ZeroClaw v2024");
-    info!("Environment: {}", config.environment);
-    info!("RPC Endpoint:{}", config.solana.rpc_url);
-    info!("Merchant Wlt:{}", config.wallet.merchant_wallet);
-    info!("Services:    SmartContractReview, OnChainIntelligence");
-    info!("====================================");
+/// The available blockchain services.[span_5](start_span)[span_5](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ServiceType {
+    SmartContractReview,
+    OnChainIntelligence,
 }
 
-/// Handles graceful shutdown signals (Ctrl+C, SIGTERM).
-async fn shutdown_handler(app: Arc<App>) {
-    let ctrl_c = async {
-        if let Err(e) = signal::ctrl_c().await {
-            error!("Failed to listen for Ctrl+C: {}", e);
-        }
-    };
+/// Represents the evaluated risk level of an asset or smart contract.[span_6](start_span)[span_6](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum RiskLevel {
+    VeryLow,
+    Low,
+    Medium,
+    High,
+    Critical,
+}
 
-    #[cfg(unix)]
-    let terminate = async {
-        match signal::unix::signal(signal::unix::SignalKind::terminate()) {
-            Ok(mut sig) => {
-                let _ = sig.recv().await;
-            }
-            Err(e) => {
-                error!("Failed to install SIGTERM signal handler: {}", e);
-                std::future::pending::<()>().await;
-            }
-        }
-    };
+/// Events that can be emitted within the application.[span_7](start_span)[span_7](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum EventType {
+    JobCreated,
+    InvoiceCreated,
+    PaymentDetected,
+    JobStarted,
+    JobCompleted,
+    ReportGenerated,
+    ApplicationStarted,
+    ApplicationStopped,
+}
 
-    #[cfg(not(unix))]
-    let terminate = std::future::pending::<()>();
+// ============================================================================
+// Configuration Models[span_8](start_span)[span_8](end_span)
+// ============================================================================
 
-    tokio::select! {
-        _ = ctrl_c => info!("Received Ctrl+C signal."),
-        _ = terminate => info!("Received SIGTERM signal."),
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApplicationConfig {
+    pub name: String,
+    pub version: String,
+    pub environment: String,
+    pub debug: bool,
+    pub host: String,
+    pub port: u16,
+    pub timezone: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RuntimeConfig {
+    pub shutdown_timeout_seconds: u64,
+    pub worker_threads: usize,
+    pub max_concurrent_jobs: usize,
+    pub enable_graceful_shutdown: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoggingConfig {
+    pub level: String,
+    pub log_file: String,
+    pub payment_log: String,
+    pub enable_console: bool,
+    pub enable_file: bool,
+    pub rotation: String,
+    pub max_log_files: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SolanaConfig {
+    pub network: String,
+    pub rpc_url: String,
+    pub commitment: String,
+    pub request_timeout_seconds: u64,
+    pub max_retries: usize,
+    pub retry_delay_seconds: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WalletConfig {
+    pub merchant_wallet: String,
+    pub currency: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaymentConfig {
+    pub enabled: bool,
+    pub poll_interval_seconds: u64,
+    pub confirmation_count: usize,
+    pub payment_timeout_seconds: u64,
+    pub invoice_expiry_minutes: u64,
+    pub allow_partial_payment: bool,
+    pub allow_overpayment: bool,
+    pub auto_start_job: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AIConfig {
+    pub provider: String,
+    pub model: String,
+    pub api_key: String,
+    pub temperature: f32,
+    pub max_tokens: usize,
+    pub request_timeout_seconds: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReportConfig {
+    pub enabled: bool,
+    pub output_directory: String,
+    pub template_directory: String,
+    pub generate_markdown: bool,
+    pub generate_pdf: bool,
+    pub keep_history: bool,
+    pub compress_reports: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UploadConfig {
+    pub directory: String,
+    pub max_file_size_mb: u64,
+    pub allowed_extensions: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StorageConfig {
+    pub invoice_directory: String,
+    pub history_directory: String,
+    pub report_directory: String,
+    pub upload_directory: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityConfig {
+    pub enable_rate_limiting: bool,
+    pub requests_per_minute: u32,
+    pub enable_cors: bool,
+    pub allowed_origins: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TerminalConfig {
+    pub show_timestamp: bool,
+    pub show_banner: bool,
+    pub animated_cursor: bool,
+    pub typing_speed: u64,
+    pub enable_colors: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeatureFlags {
+    pub smart_contract_review: bool,
+    pub onchain_intelligence: bool,
+    pub pdf_reports: bool,
+    pub markdown_reports: bool,
+    pub payment_monitor: bool,
+    pub job_history: bool,
+}
+
+/// Global Application Configuration mapping to configs/app.toml.[span_9](start_span)[span_9](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppConfig {
+    pub application: ApplicationConfig,
+    pub runtime: RuntimeConfig,
+    pub logging: LoggingConfig,
+    pub solana: SolanaConfig,
+    pub wallet: WalletConfig,
+    pub payments: PaymentConfig,
+    pub ai: AIConfig,
+    pub reports: ReportConfig,
+    pub uploads: UploadConfig,
+    pub storage: StorageConfig,
+    pub security: SecurityConfig,
+    pub terminal: TerminalConfig,
+    pub features: FeatureFlags,
+}
+
+// ============================================================================
+// Core Models[span_10](start_span)[span_10](end_span)
+// ============================================================================
+
+/// Represents an automated AI job within the system.[span_11](start_span)[span_11](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Job {
+    pub id: String,
+    pub status: JobStatus,
+    pub service: ServiceType,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub input_source: String,
+    pub invoice_id: Option<String>,
+    pub report_id: Option<String>,
+    pub metadata: HashMap<String, String>,
+}
+
+/// Represents a customer invoice waiting for blockchain payment.[span_12](start_span)[span_12](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Invoice {
+    pub invoice_id: String,
+    pub wallet: String,
+    pub amount: f64,
+    pub currency: String,
+    pub status: String,
+    pub created_at: DateTime<Utc>,
+    pub expires_at: DateTime<Utc>,
+    pub signature: Option<String>,
+}
+
+/// Holds metadata about a generated professional report.[span_13](start_span)[span_13](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReportMetadata {
+    pub report_id: String,
+    pub job_id: String,
+    pub filename: String,
+    pub generated_at: DateTime<Utc>,
+    pub service: ServiceType,
+}
+
+/// An application event used for lifecycle tracking and observability.[span_14](start_span)[span_14](end_span)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApplicationEvent {
+    pub event_type: EventType,
+    pub job_id: Option<String>,
+    pub timestamp: DateTime<Utc>,
+    pub message: String,
+}
+
+// ============================================================================
+// Application State
+// ============================================================================
+
+/// Thread-safe shared state for the application.[span_15](start_span)[span_15](end_span)
+#[derive(Debug)]
+pub struct AppState {
+    pub config: AppConfig,
+    pub active_jobs: Arc<RwLock<HashMap<String, Job>>>,
+    pub completed_jobs: Arc<RwLock<HashMap<String, Job>>>,
+    pub invoice_cache: Arc<RwLock<HashMap<String, Invoice>>>,
+    pub report_cache: Arc<RwLock<HashMap<String, ReportMetadata>>>,
+    pub event_history: Arc<RwLock<Vec<ApplicationEvent>>>,
+}
+
+// ============================================================================
+// Application Core
+// ============================================================================
+
+/// The main application wrapper containing state and lifecycle methods.[span_16](start_span)[span_16](end_span)
+#[derive(Debug, Clone)]
+pub struct App {
+    pub state: Arc<AppState>,
+}
+
+impl App {
+    /// Initializes a new instance of the App by loading configurations and state.[span_17](start_span)[span_17](end_span)
+    pub async fn new() -> Result<Self> {
+        load_environment()?;
+        let config = load_configuration().context("Failed to load application configuration")?;
+        
+        initialize_logger(&config.logging)?;
+
+        let state = AppState {
+            config,
+            active_jobs: Arc::new(RwLock::new(HashMap::new())),
+            completed_jobs: Arc::new(RwLock::new(HashMap::new())),
+            invoice_cache: Arc::new(RwLock::new(HashMap::new())),
+            report_cache: Arc::new(RwLock::new(HashMap::new())),
+            event_history: Arc::new(RwLock::new(Vec::new())),
+        };
+
+        let app = Self {
+            state: Arc::new(state),
+        };
+
+        app.emit_event(
+            EventType::ApplicationStarted, 
+            None, 
+            "ClawHire Core Runtime Initialized".to_string()
+        ).await?;
+
+        Ok(app)
     }
 
-    info!("Initiating graceful shutdown sequence...");
-    let _ = app
-        .emit_event(
-            EventType::ApplicationStopped,
-            None,
-            "Daemon shutting down cleanly.".to_string(),
-        )
-        .await;
+    /// Prepares required directories and performs system readiness checks.[span_18](start_span)[span_18](end_span)
+    pub async fn initialize(&self) -> Result<()> {
+        let storage = &self.state.config.storage;
+        ensure_directory(&storage.invoice_directory).await?;
+        ensure_directory(&storage.history_directory).await?;
+        ensure_directory(&storage.report_directory).await?;
+        ensure_directory(&storage.upload_directory).await?;
+        
+        info!("System storage directories initialized.");
+        Ok(())
+    }
+
+    /// Handles graceful shutdown of the application.[span_19](start_span)[span_19](end_span)
+    pub async fn shutdown(&self) -> Result<()> {
+        info!("Initiating ClawHire shutdown sequence...");
+        self.emit_event(
+            EventType::ApplicationStopped, 
+            None, 
+            "Application shutting down".to_string()
+        ).await?;
+        Ok(())
+    }
+
+    /// Emits a system event and appends it to the internal event history.[span_20](start_span)[span_20](end_span)
+    pub async fn emit_event(&self, event_type: EventType, job_id: Option<String>, message: String) -> Result<()> {
+        let event = ApplicationEvent {
+            event_type,
+            job_id,
+            timestamp: utc_now(),
+            message,
+        };
+        
+        info!("[EVENT] {:?} - {}", event.event_type, event.message);
+        let mut history = self.state.event_history.write().await;
+        history.push(event);
+        Ok(())
+    }
+
+    /// Creates a new job and stores it in the active jobs pool.[span_21](start_span)[span_21](end_span)
+    pub async fn create_job(&self, service: ServiceType, input_source: String, metadata: HashMap<String, String>) -> Result<Job> {
+        let job = Job {
+            id: generate_uuid(),
+            status: JobStatus::Created,
+            service,
+            created_at: utc_now(),
+            updated_at: utc_now(),
+            input_source,
+            invoice_id: None,
+            report_id: None,
+            metadata,
+        };
+
+        let mut active_jobs = self.state.active_jobs.write().await;
+        active_jobs.insert(job.id.clone(), job.clone());
+        
+        self.emit_event(EventType::JobCreated, Some(job.id.clone()), format!("Job created for service {:?}", job.service)).await?;
+        Ok(job)
+    }
+
+    /// Updates the status of an existing job.[span_22](start_span)[span_22](end_span)
+    pub async fn update_job_status(&self, job_id: &str, new_status: JobStatus) -> Result<()> {
+        let mut active_jobs = self.state.active_jobs.write().await;
+        
+        let job = active_jobs
+            .get_mut(job_id)
+            .ok_or_else(|| CoreError::JobNotFound(job_id.to_string()))?;
+            
+        job.status = new_status.clone();
+        job.updated_at = utc_now();
+        
+        // Handle specialized status events
+        match new_status {
+            JobStatus::Executing => {
+                self.emit_event(EventType::JobStarted, Some(job_id.to_string()), "Job execution started".to_string()).await?;
+            },
+            JobStatus::Completed => {
+                self.emit_event(EventType::JobCompleted, Some(job_id.to_string()), "Job execution completed".to_string()).await?;
+            },
+            _ => {}
+        }
+        
+        Ok(())
+    }
+
+    /// Caches a generated invoice.[span_23](start_span)[span_23](end_span)
+    pub async fn store_invoice(&self, invoice: Invoice) -> Result<()> {
+        let mut cache = self.state.invoice_cache.write().await;
+        let invoice_id = invoice.invoice_id.clone();
+        cache.insert(invoice.invoice_id.clone(), invoice);
+        
+        self.emit_event(EventType::InvoiceCreated, None, format!("Invoice {} stored", invoice_id)).await?;
+        Ok(())
+    }
+
+    /// Caches the metadata for a generated report.[span_24](start_span)[span_24](end_span)
+    pub async fn store_report(&self, report: ReportMetadata) -> Result<()> {
+        let mut cache = self.state.report_cache.write().await;
+        let job_id = report.job_id.clone();
+        cache.insert(report.report_id.clone(), report);
+        
+        self.emit_event(EventType::ReportGenerated, Some(job_id), "Report successfully stored".to_string()).await?;
+        Ok(())
+    }
+
+    /// Retrieves a job by ID from the active or completed job pools.[span_25](start_span)[span_25](end_span)
+    pub async fn find_job(&self, job_id: &str) -> Result<Job> {
+        let active = self.state.active_jobs.read().await;
+        if let Some(job) = active.get(job_id) {
+            return Ok(job.clone());
+        }
+        
+        let completed = self.state.completed_jobs.read().await;
+        if let Some(job) = completed.get(job_id) {
+            return Ok(job.clone());
+        }
+
+        Err(CoreError::JobNotFound(job_id.to_string()).into())
+    }
+
+    /// Retrieves an invoice by ID.[span_26](start_span)[span_26](end_span)
+    pub async fn find_invoice(&self, invoice_id: &str) -> Result<Invoice> {
+        let cache = self.state.invoice_cache.read().await;
+        cache.get(invoice_id)
+            .cloned()
+            .ok_or_else(|| CoreError::InvoiceNotFound(invoice_id.to_string()).into())
+    }
+
+    /// Retrieves report metadata by ID.[span_27](start_span)[span_27](end_span)
+    pub async fn find_report(&self, report_id: &str) -> Result<ReportMetadata> {
+        let cache = self.state.report_cache.read().await;
+        cache.get(report_id)
+            .cloned()
+            .ok_or_else(|| CoreError::ReportNotFound(report_id.to_string()).into())
+    }
+
+    /// Moves a job from the active pool to the completed/archived pool.[span_28](start_span)[span_28](end_span)
+    pub async fn archive_job(&self, job_id: &str) -> Result<()> {
+        let mut active = self.state.active_jobs.write().await;
+        let mut completed = self.state.completed_jobs.write().await;
+        
+        let mut job = active.remove(job_id).ok_or_else(|| CoreError::JobNotFound(job_id.to_string()))?;
+        job.status = JobStatus::Archived;
+        job.updated_at = utc_now();
+        
+        completed.insert(job.id.clone(), job);
+        Ok(())
+    }
 }
 
 // ============================================================================
-// Application Bootstrap
+// Utility Functions
 // ============================================================================
 
-/// Bootstraps all core dependencies, AI providers, and sub-engines.
-async fn bootstrap_application() -> Result<(
-    Arc<App>,
-    Arc<ServiceRegistry>,
-    Arc<PaymentEngine>,
-    Arc<ReportGenerator>,
-)> {
-    let _ = dotenvy::dotenv();
-    init_logging()?;
+/// Loads application configuration from TOML files and environment variables.[span_29](start_span)[span_29](end_span)
+pub fn load_configuration() -> Result<AppConfig> {
+    let config = Config::builder()
+        .add_source(File::with_name("configs/app.toml").required(true))
+        .add_source(Environment::with_prefix("APP").separator("_"))
+        .build()
+        .map_err(|e| CoreError::ConfigError(e.to_string()))?;
 
-    info!("Loading application configuration...");
-    let app = Arc::new(App::new().await.context("Failed to initialize core App state")?);
+    let app_config: AppConfig = config.try_deserialize()
+        .map_err(|e| CoreError::ConfigError(e.to_string()))?;
 
-    app.emit_event(
-        EventType::ApplicationStarted,
-        None,
-        "ClawHire engine starting up.".to_string(),
-    )
-    .await?;
+    Ok(app_config)
+}
 
-    let config = &app.state.config;
-
-    // Instantiate AI Provider
-    let ai_provider: Arc<dyn crate::services::AIProvider> = match config.ai.provider.to_lowercase().as_str() {
-        "anthropic" => Arc::new(AnthropicProvider::new(
-            config.ai.api_key.clone(),
-            config.ai.model.clone(),
-        )),
-        "openrouter" => Arc::new(OpenRouterProvider::new(
-            config.ai.api_key.clone(),
-            config.ai.model.clone(),
-        )),
-        _ => Arc::new(OpenAIProvider::new(
-            config.ai.api_key.clone(),
-            config.ai.model.clone(),
-        )),
-    };
-
-    // Instantiate Service Registry and Register Services
-    let registry = Arc::new(ServiceRegistry::new());
+/// Initializes the global application logger based on configuration settings.[span_30](start_span)[span_30](end_span)
+pub fn initialize_logger(config: &LoggingConfig) -> Result<()> {
+    let mut builder = env_logger::Builder::new();
     
-    let sc_service = Arc::new(SmartContractReviewService::new(
-        ai_provider.clone(),
-        PathBuf::from("storage/work_dir"),
-    ));
-    registry
-        .register(ServiceType::SmartContractReview, sc_service)
-        .await;
-
-    let intel_service = Arc::new(OnChainIntelligenceService::new(
-        ai_provider,
-        config.solana.rpc_url.clone(),
-    ));
-    registry
-        .register(ServiceType::OnChainIntelligence, intel_service)
-        .await;
-
-    // Instantiate Payment Engine
-    let payment_engine = Arc::new(
-        PaymentEngine::new(app.clone())
-            .map_err(|e| anyhow::anyhow!("Payment Engine setup failed: {}", e))?,
-    );
-
-    // Instantiate Report Engine
-    let report_generator = Arc::new(
-        ReportGenerator::new(app.clone())
-            .map_err(|e| anyhow::anyhow!("Report Generator setup failed: {}", e))?,
-    );
-
-    display_startup_banner(&app);
-
-    Ok((app, registry, payment_engine, report_generator))
-}
-
-// ============================================================================
-// Command Handlers
-// ============================================================================
-
-async fn handle_start(app: Arc<App>) -> Result<()> {
-    info!("Starting background daemon mode...");
-    shutdown_handler(app).await;
-    info!("Daemon stopped successfully.");
-    Ok(())
-}
-
-async fn handle_health(app: &App) -> Result<()> {
-    println!("\n=== ClawHire System Health ===");
-    println!("Configuration Status: [ OK ]");
-    println!("Environment:          {}", app.state.config.environment);
-    println!("Solana RPC URL:       {}", app.state.config.solana.rpc_url);
-    println!("Merchant Wallet:      {}", app.state.config.wallet.merchant_wallet);
-    println!("AI Provider Config:   {} ({})", app.state.config.ai.provider, app.state.config.ai.model);
-    println!("Storage Directory:    storage/reports/ [ OK ]");
-    println!("Registered Services:  SmartContractReview, OnChainIntelligence\n");
-    Ok(())
-}
-
-async fn handle_services(registry: &ServiceRegistry) -> Result<()> {
-    println!("\n=== Available Blockchain AI Services ===");
-    for service_type in registry.list_services().await {
-        if let Ok(meta) = registry.service_metadata(&service_type).await {
-            println!("Service ID:          {}", meta.id);
-            println!("Name:                {}", meta.name);
-            println!("Description:         {}", meta.description);
-            println!("Price:               {} {}", meta.price, meta.currency);
-            println!("Est. Duration:       {} sec", meta.estimated_duration);
-            println!("Accepted Inputs:     {:?}", meta.accepted_inputs);
-            println!("--------------------------------------------------");
-        }
-    }
-    Ok(())
-}
-
-async fn handle_reports(reports: &ReportGenerator) -> Result<()> {
-    println!("\n=== Generated Reports Index ===");
-    let list = reports.list_reports().await;
-    if list.is_empty() {
-        println!("No reports generated yet.");
-    } else {
-        for rep in list {
-            println!(
-                "Report ID: {} | Job ID: {} | Service: {:?} | Status: {} | Date: {}",
-                rep.report_id, rep.job_id, rep.service, rep.status, rep.created_at
-            );
-        }
-    }
-    println!();
-    Ok(())
-}
-
-async fn handle_invoices(app: &App) -> Result<()> {
-    println!("\n=== Tracked Payment Invoices ===");
-    let cache = app.state.invoice_cache.read().await;
-    if cache.is_empty() {
-        println!("No active or past invoices recorded.");
-    } else {
-        for inv in cache.values() {
-            println!(
-                "Invoice ID: {} | Amount: {} {} | Status: {} | Wallet: {}",
-                inv.invoice_id, inv.amount, inv.currency, inv.status, inv.wallet
-            );
-        }
-    }
-    println!();
-    Ok(())
-}
-
-// ============================================================================
-// Main Entry Point
-// ============================================================================
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    let cli = Cli::parse();
-
-    let (app, registry, _payment_engine, report_generator) = match bootstrap_application().await {
-        Ok(res) => res,
-        Err(e) => {
-            eprintln!("Fatal error during application startup: {:?}", e);
-            std::process::exit(1);
-        }
+    let level = match config.level.to_lowercase().as_str() {
+        "debug" => LevelFilter::Debug,
+        "warn" => LevelFilter::Warn,
+        "error" => LevelFilter::Error,
+        "trace" => LevelFilter::Trace,
+        _ => LevelFilter::Info,
     };
+    
+    builder.filter_level(level);
+    
+    if config.enable_console {
+        builder.init();
+    }
+    
+    Ok(())
+}
 
-    match cli.command {
-        Commands::Start => {
-            handle_start(app).await?;
-        }
-        Commands::Run => {
-            info!("Running single-pass execution mode...");
-            info!("Run pass completed.");
-        }
-        Commands::Version => {
-            println!("ClawHire Version 1.0.0 (ZeroClaw Edition 2024)");
-        }
-        Commands::Health => {
-            handle_health(&app).await?;
-        }
-        Commands::Services => {
-            handle_services(&registry).await?;
-        }
-        Commands::Reports => {
-            handle_reports(&report_generator).await?;
-        }
-        Commands::Invoices => {
-            handle_invoices(&app).await?;
+/// Generates a universally unique identifier (UUID v4) as a String.[span_31](start_span)[span_31](end_span)
+pub fn generate_uuid() -> String {
+    Uuid::new_v4().to_string()
+}
+
+/// Returns the current UTC date and time.[span_32](start_span)[span_32](end_span)
+pub fn utc_now() -> DateTime<Utc> {
+    Utc::now()
+}
+
+/// Ensures a directory exists, creating it if necessary.[span_33](start_span)[span_33](end_span)
+pub async fn ensure_directory<P: AsRef<Path>>(path: P) -> Result<()> {
+    if !path.as_ref().exists() {
+        tokio::fs::create_dir_all(&path).await
+            .map_err(CoreError::IoError)?;
+    }
+    Ok(())
+}
+
+/// Loads environment variables from a `.env` file into the process environment.[span_34](start_span)[span_34](end_span)
+pub fn load_environment() -> Result<()> {
+    match dotenvy::dotenv() {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log::warn!("Could not load .env file: {}", e);
+            Ok(())
         }
     }
-
-    Ok(())
 }

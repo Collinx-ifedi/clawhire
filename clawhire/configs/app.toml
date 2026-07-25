@@ -1,0 +1,346 @@
+###############################################################################
+# ClawHire
+# Application Configuration
+# Version: 1.0.0
+###############################################################################
+
+[application]
+
+name = "ClawHire"
+version = "1.0.0"
+environment = "development"
+debug = false
+
+host = "127.0.0.1"
+port = 8080
+
+timezone = "UTC"
+
+###############################################################################
+# Runtime
+###############################################################################
+
+[runtime]
+
+shutdown_timeout_seconds = 30
+worker_threads = 4
+max_concurrent_jobs = 5
+enable_graceful_shutdown = true
+
+###############################################################################
+# Logging
+###############################################################################
+
+[logging]
+
+level = "info"
+
+log_file = "logs/clawhire.log"
+
+payment_log = "logs/payments.log"
+
+enable_console = true
+enable_file = true
+
+rotation = "daily"
+
+max_log_files = 30
+
+###############################################################################
+# Solana
+###############################################################################
+
+[solana]
+
+network = "devnet"
+
+rpc_url = "https://api.devnet.solana.com"
+
+commitment = "confirmed"
+
+request_timeout_seconds = 30
+
+max_retries = 5
+
+retry_delay_seconds = 2
+
+###############################################################################
+# Merchant Wallet
+###############################################################################
+
+[wallet]
+
+merchant_wallet = "YOUR_SOLANA_WALLET_ADDRESS"
+
+currency = "SOL"
+
+###############################################################################
+# Payments
+###############################################################################
+
+[payments]
+
+enabled = true
+
+poll_interval_seconds = 5
+
+confirmation_count = 1
+
+payment_timeout_seconds = 600
+
+invoice_expiry_minutes = 15
+
+allow_partial_payment = false
+
+allow_overpayment = false
+
+auto_start_job = true
+
+###############################################################################
+# ZeroClaw
+###############################################################################
+
+[zeroclaw]
+
+enabled = true
+
+binary = "zeroclaw"
+
+config_path = "configs/app.toml"
+
+webhook_channel = "clawhire"
+
+request_timeout_seconds = 120
+
+###############################################################################
+# AI Provider
+###############################################################################
+
+[ai]
+
+provider = "openai"
+
+model = "gpt-5.5"
+
+temperature = 0.20
+
+max_tokens = 8192
+
+request_timeout_seconds = 300
+
+###############################################################################
+# Smart Contract Review
+###############################################################################
+
+[smart_contract_review]
+
+enabled = true
+
+prompt = "prompts/smart_contract_review.md"
+
+max_repository_size_mb = 200
+
+max_source_files = 500
+
+clone_depth = 1
+
+allow_private_repositories = true
+
+###############################################################################
+# On-chain Intelligence
+###############################################################################
+
+[onchain_intelligence]
+
+enabled = true
+
+prompt = "prompts/onchain_intelligence.md"
+
+max_transactions = 100
+
+include_tokens = true
+
+include_nfts = true
+
+include_programs = true
+
+###############################################################################
+# Reports
+###############################################################################
+
+[reports]
+
+enabled = true
+
+output_directory = "storage/reports"
+
+template_directory = "assets/reports"
+
+generate_markdown = true
+
+generate_pdf = true
+
+keep_history = true
+
+compress_reports = false
+
+###############################################################################
+# Uploads
+###############################################################################
+
+[uploads]
+
+directory = "storage/uploads"
+
+max_file_size_mb = 100
+
+allowed_extensions = [
+    "rs",
+    "zip",
+    "txt",
+    "md"
+]
+
+###############################################################################
+# Storage
+###############################################################################
+
+[storage]
+
+invoice_directory = "storage/invoices"
+
+history_directory = "storage/history"
+
+report_directory = "storage/reports"
+
+upload_directory = "storage/uploads"
+
+###############################################################################
+# HTTP
+###############################################################################
+
+[http]
+
+connect_timeout_seconds = 30
+
+read_timeout_seconds = 300
+
+user_agent = "ClawHire/1.0"
+
+###############################################################################
+# Security
+###############################################################################
+
+[security]
+
+enable_rate_limiting = true
+
+requests_per_minute = 60
+
+enable_cors = true
+
+allowed_origins = [
+    "*"
+]
+
+###############################################################################
+# Streamlit
+###############################################################################
+
+[streamlit]
+
+host = "127.0.0.1"
+
+port = 8501
+
+theme = "terminal"
+
+auto_refresh = true
+
+refresh_interval_ms = 1000
+
+###############################################################################
+# Terminal
+###############################################################################
+
+[terminal]
+
+show_timestamp = true
+
+show_banner = true
+
+animated_cursor = true
+
+typing_speed = 20
+
+enable_colors = true
+
+###############################################################################
+# Feature Flags
+###############################################################################
+
+[features]
+
+smart_contract_review = true
+
+onchain_intelligence = true
+
+pdf_reports = true
+
+markdown_reports = true
+
+payment_monitor = true
+
+job_history = true
+
+###############################################################################
+# Job Lifecycle
+###############################################################################
+
+[jobs]
+
+auto_archive = true
+
+archive_after_days = 30
+
+max_running_jobs = 5
+
+cleanup_completed_jobs = true
+
+###############################################################################
+# GitHub
+###############################################################################
+
+[github]
+
+clone_timeout_seconds = 120
+
+default_branch = "main"
+
+###############################################################################
+# Health Check
+###############################################################################
+
+[health]
+
+enabled = true
+
+interval_seconds = 30
+
+###############################################################################
+# Development
+###############################################################################
+
+[development]
+
+verbose_logging = false
+
+mock_payments = false
+
+mock_reports = false
+
+skip_payment_verification = false
+
+###############################################################################
+# End of Configuration
+###############################################################################

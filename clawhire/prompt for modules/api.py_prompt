@@ -1,0 +1,634 @@
+You are a Principal Python Backend Engineer, Senior Systems Integration Engineer, Rust FFI Architect, and Streamlit Infrastructure Engineer.
+
+Your task is to generate the COMPLETE production-ready source code for:
+
+ui/api.py
+
+Project Name:
+ClawHire
+
+Project Description:
+
+ClawHire is a self-hosted AI blockchain freelancer built on Rust and ZeroClaw.
+
+The frontend is written in Streamlit.
+
+The backend is written in Rust.
+
+This module is the ONLY communication layer between the Streamlit frontend and the Rust backend.
+
+It abstracts every backend interaction behind a clean Python API.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CRITICAL REQUIREMENTS
+
+Generate COMPLETE production-ready code.
+
+Do NOT generate placeholders.
+
+Do NOT generate TODO comments.
+
+Do NOT generate pseudo code.
+
+Everything must work.
+
+Python Version
+
+3.13+
+
+Follow PEP8.
+
+Use type hints.
+
+Use dataclasses.
+
+Use asyncio.
+
+Use pathlib.
+
+Use subprocess.
+
+Use httpx.
+
+Use requests only if absolutely necessary.
+
+Use pydantic v2.
+
+Use loguru.
+
+Use cachetools.
+
+Use tenacity.
+
+Use typing.
+
+Use uuid.
+
+Use datetime.
+
+No business logic.
+
+No Streamlit UI.
+
+No CSS.
+
+Only backend communication.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROJECT STRUCTURE
+
+This module is imported by
+
+terminal.py
+
+app.py
+
+components.py
+
+Do NOT import Streamlit.
+
+Do NOT create UI components.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BACKEND
+
+Rust binary
+
+clawhire
+
+Located in
+
+target/release/clawhire
+
+The API layer must support BOTH
+
+1.
+
+Local Rust CLI execution
+
+and
+
+2.
+
+Future HTTP backend
+
+without changing the frontend.
+
+Implement an adapter architecture.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+BackendMode
+
+CLI
+
+HTTP
+
+AUTO
+
+AUTO should detect which backend is available.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ConnectionStatus
+
+CONNECTED
+
+DISCONNECTED
+
+CONNECTING
+
+ERROR
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ServiceType
+
+SmartContractReview
+
+OnChainIntelligence
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+JobStatus
+
+Created
+
+Quoted
+
+AwaitingPayment
+
+PaymentDetected
+
+Executing
+
+GeneratingReport
+
+Completed
+
+Failed
+
+Cancelled
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+InvoiceStatus
+
+Created
+
+AwaitingPayment
+
+PendingConfirmation
+
+Confirmed
+
+Expired
+
+Failed
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Pydantic Models
+
+HealthResponse
+
+VersionResponse
+
+JobResponse
+
+InvoiceResponse
+
+ReportResponse
+
+WalletResponse
+
+ServiceResponse
+
+ConfigurationResponse
+
+PaymentResponse
+
+SystemStatus
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Abstract Base Class
+
+BackendAdapter
+
+Methods
+
+health()
+
+version()
+
+services()
+
+create_job()
+
+create_invoice()
+
+wait_payment()
+
+job()
+
+jobs()
+
+invoice()
+
+reports()
+
+download()
+
+wallet()
+
+status()
+
+configuration()
+
+shutdown()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+RustCLIAdapter
+
+Responsibilities
+
+Launch Rust executable.
+
+Execute commands.
+
+Capture stdout.
+
+Capture stderr.
+
+Parse JSON.
+
+Handle errors.
+
+Timeouts.
+
+Retries.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Methods
+
+execute()
+
+execute_json()
+
+create_job()
+
+health()
+
+version()
+
+services()
+
+wallet()
+
+reports()
+
+invoice()
+
+jobs()
+
+download()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+HTTPAdapter
+
+Responsibilities
+
+Communicate with future backend.
+
+Use httpx.
+
+Support
+
+GET
+
+POST
+
+PUT
+
+DELETE
+
+Retries
+
+Timeout
+
+Authentication
+
+JSON parsing
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+BackendClient
+
+Responsibilities
+
+Auto-detect backend.
+
+Manage adapters.
+
+Cache requests.
+
+Retry failures.
+
+Provide clean interface.
+
+Methods
+
+connect()
+
+disconnect()
+
+health()
+
+status()
+
+wallet()
+
+services()
+
+create_job()
+
+create_invoice()
+
+wait_payment()
+
+job()
+
+jobs()
+
+invoice()
+
+reports()
+
+download()
+
+configuration()
+
+version()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+DownloadManager
+
+Responsibilities
+
+Download
+
+Markdown report
+
+PDF report
+
+Validate files.
+
+Store downloads.
+
+Methods
+
+download_pdf()
+
+download_markdown()
+
+verify()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+WalletManager
+
+Responsibilities
+
+Fetch wallet.
+
+Validate address.
+
+Network.
+
+Methods
+
+wallet()
+
+validate()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+HealthMonitor
+
+Responsibilities
+
+Periodic backend health checks.
+
+Detect backend failures.
+
+Reconnect automatically.
+
+Methods
+
+start()
+
+stop()
+
+check()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+CacheManager
+
+Cache
+
+Services
+
+Wallet
+
+Version
+
+Configuration
+
+Health
+
+TTL configurable.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ConfigurationLoader
+
+Read
+
+.env
+
+configs/app.toml
+
+Support
+
+Backend mode
+
+Executable path
+
+HTTP URL
+
+Timeout
+
+Retry count
+
+Download directory
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Retry Policy
+
+Exponential backoff.
+
+Maximum retries configurable.
+
+Retry
+
+Connection errors
+
+Timeouts
+
+Temporary backend failures
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Logging
+
+Use Loguru.
+
+Log
+
+Connection
+
+Commands
+
+Backend execution
+
+Errors
+
+Timeouts
+
+Downloads
+
+Health checks
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Security
+
+Never execute arbitrary shell commands.
+
+Never interpolate user input into shell commands.
+
+Use subprocess safely with argument lists only.
+
+Validate every executable path.
+
+Validate downloaded files.
+
+Never expose secrets.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Performance
+
+Connection pooling.
+
+Request caching.
+
+Lazy initialization.
+
+Minimal process spawning.
+
+Support concurrent requests.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Documentation
+
+Every public class.
+
+Every public method.
+
+Every helper function.
+
+Must include professional docstrings.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Integration
+
+This module must integrate directly with
+
+terminal.py
+
+components.py
+
+app.py
+
+and the Rust backend
+
+main.rs
+
+core.rs
+
+services.rs
+
+payments.rs
+
+reports.rs
+
+without requiring modifications.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Output
+
+Generate ONE complete production-ready Python source file.
+
+No explanations.
+
+No markdown.
+
+Only Python source code.
+
+The resulting api.py must compile cleanly, provide a stable abstraction layer between Streamlit and Rust, support both CLI and future HTTP modes, and require no placeholder implementations.

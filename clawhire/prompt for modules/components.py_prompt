@@ -1,0 +1,744 @@
+You are a Principal Python Software Engineer, Senior UI Architect, and Streamlit Framework Expert.
+
+Your task is to generate the COMPLETE production-ready source code for:
+
+ui/components.py
+
+Project Name:
+ClawHire
+
+Project Description:
+
+ClawHire is a self-hosted AI blockchain freelancer built on Rust and ZeroClaw.
+
+The frontend is written in Streamlit but must visually behave like a modern Linux terminal.
+
+This module contains EVERY reusable UI component used throughout the application.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CRITICAL REQUIREMENTS
+
+Generate COMPLETE production-ready code.
+
+Do NOT generate placeholders.
+
+Do NOT generate TODO comments.
+
+Do NOT generate pseudo code.
+
+Everything must work.
+
+Python Version
+
+3.13+
+
+Follow PEP8.
+
+Use modern Python.
+
+Use dataclasses where appropriate.
+
+Use typing.
+
+Use pathlib.
+
+Use streamlit.
+
+Use markdown.
+
+Use html.
+
+Everything should be reusable.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PURPOSE
+
+This module contains reusable UI widgets.
+
+NO application logic.
+
+NO payment logic.
+
+NO API logic.
+
+NO terminal command parser.
+
+Only reusable visual components.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This module imports
+
+styles.py
+
+Only.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ComponentTheme
+
+Loads colors from styles.py.
+
+Provides helper methods
+
+success()
+
+error()
+
+warning()
+
+info()
+
+primary()
+
+secondary()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+TerminalWindow
+
+Responsibilities
+
+Render terminal frame.
+
+Render title bar.
+
+Render traffic-light buttons.
+
+Render terminal body.
+
+Support
+
+Header
+
+Footer
+
+Status
+
+Content
+
+Scrollable output
+
+Methods
+
+render()
+
+header()
+
+body()
+
+footer()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+TerminalBanner
+
+Displays
+
+ASCII logo
+
+Application name
+
+Version
+
+Environment
+
+RPC
+
+Wallet
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+PromptLine
+
+Responsibilities
+
+Display
+
+User prompt
+
+Typing cursor
+
+Current directory
+
+Methods
+
+render()
+
+set_prompt()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+OutputBlock
+
+Render
+
+Normal output
+
+Colored output
+
+Markdown
+
+Logs
+
+Streaming text
+
+Methods
+
+render()
+
+append()
+
+clear()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+CommandHistory
+
+Maintain command history.
+
+Methods
+
+add()
+
+clear()
+
+render()
+
+previous()
+
+next()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ServiceCard
+
+Display
+
+Service Name
+
+Description
+
+Price
+
+Currency
+
+Estimated Duration
+
+Supported Inputs
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ServiceSelector
+
+Display exactly TWO services.
+
+1
+
+Smart Contract Security Review
+
+2
+
+On-chain Intelligence Report
+
+Support
+
+Selection
+
+Highlighting
+
+Keyboard navigation
+
+Methods
+
+render()
+
+selected()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+WalletCard
+
+Display
+
+Wallet Address
+
+Copy Button
+
+Network
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+InvoiceCard
+
+Display
+
+Invoice Number
+
+Amount
+
+Wallet
+
+Status
+
+Countdown
+
+Methods
+
+render()
+
+update_status()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+PaymentStatusCard
+
+Statuses
+
+Awaiting Payment
+
+Payment Detected
+
+Confirmed
+
+Expired
+
+Failed
+
+Use colored badges.
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+JobStatusCard
+
+Statuses
+
+Created
+
+Quoted
+
+Awaiting Payment
+
+Executing
+
+Generating Report
+
+Completed
+
+Archived
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ProgressCard
+
+Animated progress bar.
+
+Percentage
+
+Elapsed Time
+
+ETA
+
+Methods
+
+render()
+
+update()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ReportCard
+
+Display
+
+Report Name
+
+Job ID
+
+Created
+
+Download Buttons
+
+Markdown
+
+PDF
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ReportViewer
+
+Display
+
+Markdown
+
+Syntax highlighting
+
+Code blocks
+
+Tables
+
+Images
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Notification
+
+Support
+
+Success
+
+Error
+
+Warning
+
+Info
+
+Methods
+
+show()
+
+hide()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Toast
+
+Animated popup.
+
+Auto dismiss.
+
+Methods
+
+show()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Divider
+
+Horizontal divider.
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+SectionHeader
+
+Support
+
+Title
+
+Subtitle
+
+Icon
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+LoadingSpinner
+
+Support
+
+Terminal spinner
+
+Dots
+
+Progress
+
+Methods
+
+render()
+
+start()
+
+stop()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+TypingIndicator
+
+Blinking cursor.
+
+Typing animation.
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+EmptyState
+
+Professional empty state.
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+ErrorPanel
+
+Display
+
+Title
+
+Description
+
+Error Code
+
+Recovery suggestion
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+SuccessPanel
+
+Display
+
+Completion summary
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+TerminalTable
+
+Support
+
+Headers
+
+Rows
+
+Alignment
+
+ANSI-like styling
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+MetricCard
+
+Display
+
+Label
+
+Value
+
+Trend
+
+Color
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+FileUploaderCard
+
+Accept
+
+GitHub URL
+
+ZIP Archive
+
+Rust Source
+
+Wallet Address
+
+Transaction Signature
+
+Validation messages.
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+CopyToClipboardButton
+
+Support
+
+Wallet Address
+
+Transaction Signature
+
+Report ID
+
+Invoice ID
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+DownloadButtons
+
+Support
+
+Markdown
+
+PDF
+
+Methods
+
+render()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Accessibility
+
+Keyboard friendly.
+
+High contrast.
+
+Responsive.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Performance
+
+Reuse components.
+
+Avoid duplicate rendering.
+
+Support Streamlit caching where appropriate.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Documentation
+
+Every public class.
+
+Every public method.
+
+Every helper function.
+
+Must include professional docstrings.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Output
+
+Generate ONE complete production-ready Python source file.
+
+No explanations.
+
+No markdown.
+
+Only Python code.
+
+The resulting components.py must integrate directly with
+
+styles.py
+
+terminal.py
+
+api.py
+
+app.py
+
+without requiring modifications.

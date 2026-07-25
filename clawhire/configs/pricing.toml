@@ -1,0 +1,239 @@
+###############################################################################
+# ClawHire
+# Pricing Configuration
+# Version: 1.0.0
+#
+# This file contains all pricing and invoice-related settings.
+# No business logic should hardcode prices.
+###############################################################################
+
+###############################################################################
+# Global Pricing Configuration
+###############################################################################
+
+[global]
+
+currency = "SOL"
+
+display_currency = "SOL"
+
+pricing_strategy = "fixed"
+
+tax_enabled = false
+
+tax_percentage = 0.00
+
+allow_discount_codes = false
+
+allow_manual_price_override = false
+
+round_precision = 4
+
+###############################################################################
+# Smart Contract Security Review
+###############################################################################
+
+[smart_contract_review]
+
+service_id = "SCR-001"
+
+enabled = true
+
+price = 0.20
+
+currency = "SOL"
+
+minimum_price = 0.20
+
+maximum_price = 0.20
+
+estimated_completion_minutes = 10
+
+description = "Professional AI-powered security audit for Solana smart contracts."
+
+###############################################################################
+# Supported Inputs
+###############################################################################
+
+accepted_inputs = [
+    "github_repository",
+    "zip_archive",
+    "rust_source",
+    "pasted_code"
+]
+
+###############################################################################
+# Deliverables
+###############################################################################
+
+deliverables = [
+    "Security Score",
+    "Executive Summary",
+    "Critical Vulnerabilities",
+    "High Risk Findings",
+    "Medium Risk Findings",
+    "Low Risk Findings",
+    "Recommendations",
+    "Markdown Report",
+    "PDF Report"
+]
+
+###############################################################################
+# On-chain Intelligence Report
+###############################################################################
+
+[onchain_intelligence]
+
+service_id = "OCI-001"
+
+enabled = true
+
+price = 0.10
+
+currency = "SOL"
+
+minimum_price = 0.10
+
+maximum_price = 0.10
+
+estimated_completion_minutes = 5
+
+description = "Professional AI-powered wallet and transaction intelligence report."
+
+###############################################################################
+# Supported Inputs
+###############################################################################
+
+accepted_inputs = [
+    "wallet_address",
+    "transaction_signature"
+]
+
+###############################################################################
+# Deliverables
+###############################################################################
+
+deliverables = [
+    "Wallet Overview",
+    "Balance Summary",
+    "Token Holdings",
+    "NFT Holdings",
+    "Transaction History",
+    "Program Interactions",
+    "Risk Assessment",
+    "Executive Summary",
+    "Markdown Report",
+    "PDF Report"
+]
+
+###############################################################################
+# Invoice Configuration
+###############################################################################
+
+[invoices]
+
+enabled = true
+
+prefix = "CHR"
+
+invoice_expiry_minutes = 15
+
+auto_generate_reference = true
+
+reference_length = 12
+
+include_timestamp = true
+
+include_service_name = true
+
+include_wallet_address = true
+
+include_payment_status = true
+
+###############################################################################
+# Payment Configuration
+###############################################################################
+
+[payments]
+
+currency = "SOL"
+
+confirmation_required = 1
+
+poll_interval_seconds = 5
+
+payment_timeout_minutes = 15
+
+allow_partial_payment = false
+
+allow_overpayment = false
+
+allow_underpayment = false
+
+auto_start_service = true
+
+###############################################################################
+# Refund Policy
+###############################################################################
+
+[refunds]
+
+enabled = false
+
+manual_review_required = true
+
+###############################################################################
+# Receipt Configuration
+###############################################################################
+
+[receipts]
+
+generate_receipt = true
+
+include_invoice_number = true
+
+include_transaction_signature = true
+
+include_payment_timestamp = true
+
+include_service_details = true
+
+include_amount_paid = true
+
+###############################################################################
+# Terminal Display
+###############################################################################
+
+[terminal]
+
+show_price_before_confirmation = true
+
+show_invoice_reference = true
+
+show_wallet_address = true
+
+show_payment_status = true
+
+show_confirmation_message = true
+
+show_completion_summary = true
+
+###############################################################################
+# Future Pricing (Reserved)
+###############################################################################
+
+[future]
+
+dynamic_pricing = false
+
+subscription_plans = false
+
+enterprise_pricing = false
+
+volume_discounts = false
+
+coupon_support = false
+
+###############################################################################
+# End of File
+###############################################################################

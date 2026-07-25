@@ -113,7 +113,6 @@ validate_project_structure() {
     
     local required_files=(
         "Cargo.toml"
-        ".env"
         "configs/app.toml"
         "configs/services.toml"
         "configs/pricing.toml"

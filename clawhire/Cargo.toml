@@ -1,0 +1,233 @@
+[package]
+name = "clawhire"
+version = "1.0.0"
+edition = "2024"
+authors = ["Collins Ifedi"]
+description = "ClawHire - Self-hosted Solana AI Freelancer built on ZeroClaw"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/yourusername/clawhire"
+homepage = "https://github.com/yourusername/clawhire"
+keywords = [
+    "solana",
+    "zeroclaw",
+    "ai",
+    "rust",
+    "streamlit",
+    "security",
+    "blockchain"
+]
+categories = [
+    "command-line-utilities",
+    "web-programming",
+    "api-bindings"
+]
+publish = false
+resolver = "2"
+
+[[bin]]
+name = "clawhire"
+path = "src/main.rs"
+
+[profile.dev]
+opt-level = 0
+debug = true
+incremental = true
+overflow-checks = true
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"
+incremental = false
+debug = false
+
+[features]
+default = ["pdf"]
+
+pdf = [
+    "dep:printpdf"
+]
+
+# Future-proof feature flags
+devnet = []
+mainnet = []
+mock-payments = []
+verbose-logs = []
+
+[dependencies]
+
+#############################################
+# Async Runtime
+#############################################
+
+tokio = { version = "1.47", features = ["full"] }
+
+#############################################
+# Serialization
+#############################################
+
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.9"
+
+#############################################
+# Configuration
+#############################################
+
+config = "0.15"
+dotenvy = "0.15"
+
+#############################################
+# Logging
+#############################################
+
+log = "0.4"
+env_logger = "0.11"
+
+#############################################
+# Error Handling
+#############################################
+
+anyhow = "1"
+thiserror = "2"
+
+#############################################
+# HTTP Client
+#############################################
+
+reqwest = { version = "0.12", default-features = false, features = [
+    "json",
+    "rustls-tls",
+    "gzip",
+    "brotli",
+    "deflate"
+] }
+
+#############################################
+# UUID
+#############################################
+
+uuid = { version = "1", features = [
+    "v4",
+    "serde"
+] }
+
+#############################################
+# Time
+#############################################
+
+chrono = { version = "0.4", features = [
+    "serde"
+] }
+
+#############################################
+# Async Traits
+#############################################
+
+async-trait = "0.1"
+
+#############################################
+# Futures
+#############################################
+
+futures = "0.3"
+
+#############################################
+# PDF Reports
+#############################################
+
+printpdf = { version = "0.8", optional = true }
+
+#############################################
+# Markdown
+#############################################
+
+pulldown-cmark = "0.13"
+
+#############################################
+# File Utilities
+#############################################
+
+walkdir = "2"
+tempfile = "3"
+
+#############################################
+# Compression
+#############################################
+
+zip = "5"
+
+#############################################
+# Hashing
+#############################################
+
+sha2 = "0.10"
+
+#############################################
+# Encoding
+#############################################
+
+base64 = "0.22"
+
+#############################################
+# Regex
+#############################################
+
+regex = "1"
+
+#############################################
+# CLI Styling
+#############################################
+
+colored = "3"
+indicatif = "0.18"
+
+#############################################
+# Solana
+#############################################
+
+solana-sdk = "3"
+solana-client = "3"
+
+#############################################
+# Git Repository Support
+#############################################
+
+git2 = "0.20"
+
+#############################################
+# URL Parsing
+#############################################
+
+url = "2"
+
+#############################################
+# Randomness
+#############################################
+
+rand = "0.9"
+
+#############################################
+# Directory Handling
+#############################################
+
+dirs = "6"
+
+#############################################
+# MIME Detection
+#############################################
+
+mime_guess = "2"
+
+#############################################
+# Development
+#############################################
+
+[dev-dependencies]
+
+tokio-test = "0.4"
+mockito = "1"
+pretty_assertions = "1"

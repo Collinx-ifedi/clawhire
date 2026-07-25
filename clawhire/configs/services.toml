@@ -1,0 +1,322 @@
+###############################################################################
+# ClawHire
+# Services Configuration
+# Version: 1.0.0
+#
+# This file defines every service exposed by ClawHire.
+# Pricing is maintained separately in pricing.toml.
+###############################################################################
+
+###############################################################################
+# Global Service Configuration
+###############################################################################
+
+[global]
+
+enabled = true
+
+default_currency = "SOL"
+
+max_parallel_jobs = 5
+
+job_timeout_minutes = 30
+
+allow_multiple_jobs_per_user = true
+
+store_job_history = true
+
+auto_archive_jobs = true
+
+archive_after_days = 30
+
+###############################################################################
+# Smart Contract Security Review
+###############################################################################
+
+[smart_contract_review]
+
+enabled = true
+
+id = "SCR-001"
+
+display_name = "Smart Contract Security Review"
+
+description = "AI-powered security analysis for Solana smart contracts."
+
+category = "Security"
+
+tier = "Premium"
+
+payment_required = true
+
+report_enabled = true
+
+report_format = [
+    "markdown",
+    "pdf"
+]
+
+###############################################################################
+# Accepted Inputs
+###############################################################################
+
+accepted_inputs = [
+    "github_repository",
+    "zip_archive",
+    "rust_source",
+    "pasted_code"
+]
+
+###############################################################################
+# Repository Validation
+###############################################################################
+
+allow_private_repositories = true
+
+allow_public_repositories = true
+
+max_repository_size_mb = 200
+
+max_repository_files = 500
+
+clone_depth = 1
+
+###############################################################################
+# Upload Validation
+###############################################################################
+
+max_upload_size_mb = 100
+
+allowed_extensions = [
+    "rs",
+    "zip",
+    "txt",
+    "md"
+]
+
+###############################################################################
+# AI Analysis
+###############################################################################
+
+prompt = "prompts/smart_contract_review.md"
+
+temperature = 0.20
+
+max_tokens = 8192
+
+###############################################################################
+# Report Sections
+###############################################################################
+
+include_summary = true
+
+include_security_score = true
+
+include_vulnerabilities = true
+
+include_recommendations = true
+
+include_best_practices = true
+
+include_metadata = true
+
+include_timestamp = true
+
+###############################################################################
+# Findings
+###############################################################################
+
+report_critical = true
+
+report_high = true
+
+report_medium = true
+
+report_low = true
+
+report_info = true
+
+###############################################################################
+# Output
+###############################################################################
+
+output_directory = "storage/reports"
+
+###############################################################################
+# On-chain Intelligence
+###############################################################################
+
+[onchain_intelligence]
+
+enabled = true
+
+id = "OCI-001"
+
+display_name = "On-chain Intelligence Report"
+
+description = "Comprehensive AI-powered wallet and transaction investigation."
+
+category = "Blockchain"
+
+tier = "Premium"
+
+payment_required = true
+
+report_enabled = true
+
+report_format = [
+    "markdown",
+    "pdf"
+]
+
+###############################################################################
+# Accepted Inputs
+###############################################################################
+
+accepted_inputs = [
+    "wallet_address",
+    "transaction_signature"
+]
+
+###############################################################################
+# AI Analysis
+###############################################################################
+
+prompt = "prompts/onchain_intelligence.md"
+
+temperature = 0.20
+
+max_tokens = 8192
+
+###############################################################################
+# Blockchain Queries
+###############################################################################
+
+include_balance = true
+
+include_tokens = true
+
+include_nfts = true
+
+include_recent_transactions = true
+
+include_program_interactions = true
+
+include_wallet_age = true
+
+include_activity_summary = true
+
+include_risk_analysis = true
+
+max_transactions = 100
+
+###############################################################################
+# Report Sections
+###############################################################################
+
+include_summary = true
+
+include_risk_score = true
+
+include_statistics = true
+
+include_recommendations = true
+
+include_metadata = true
+
+include_timestamp = true
+
+###############################################################################
+# Output
+###############################################################################
+
+output_directory = "storage/reports"
+
+###############################################################################
+# Shared Report Settings
+###############################################################################
+
+[reports]
+
+generate_markdown = true
+
+generate_pdf = true
+
+include_cover_page = true
+
+include_table_of_contents = true
+
+include_footer = true
+
+include_generation_timestamp = true
+
+###############################################################################
+# Job Lifecycle
+###############################################################################
+
+[jobs]
+
+states = [
+    "created",
+    "quoted",
+    "awaiting_payment",
+    "payment_confirmed",
+    "executing",
+    "generating_report",
+    "completed",
+    "archived"
+]
+
+default_state = "created"
+
+###############################################################################
+# Payment Behaviour
+###############################################################################
+
+[payments]
+
+require_payment_before_execution = true
+
+payment_timeout_minutes = 15
+
+start_execution_after_confirmation = true
+
+###############################################################################
+# Terminal Behaviour
+###############################################################################
+
+[terminal]
+
+show_invoice = true
+
+show_live_status = true
+
+show_execution_logs = true
+
+show_report_location = true
+
+show_completion_message = true
+
+###############################################################################
+# Feature Flags
+###############################################################################
+
+[features]
+
+enable_security_review = true
+
+enable_onchain_intelligence = true
+
+enable_pdf_reports = true
+
+enable_markdown_reports = true
+
+enable_invoice_generation = true
+
+enable_payment_monitoring = true
+
+enable_job_history = true
+
+###############################################################################
+# End of File
+###############################################################################

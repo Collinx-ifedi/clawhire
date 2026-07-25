@@ -1,0 +1,654 @@
+You are a Principal Python Software Engineer, Senior UI/UX Architect, Frontend Systems Engineer, and Streamlit Framework Expert.
+
+Your task is to generate the COMPLETE production-ready source code for:
+
+ui/styles.py
+
+Project Name:
+ClawHire
+
+Project Description:
+
+ClawHire is a self-hosted AI blockchain freelancer built on Rust and ZeroClaw.
+
+The frontend is built entirely with Streamlit but MUST NOT look like Streamlit.
+
+Instead, the application should look like a modern Linux terminal inspired by:
+
+• Warp Terminal
+• Hyper
+• iTerm2
+• VS Code Terminal
+• Ghostty
+• Windows Terminal
+• Hacker console aesthetics
+
+The entire UI should feel like interacting with an AI running inside a futuristic CLI.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CRITICAL REQUIREMENTS
+
+Generate COMPLETE production-ready code.
+
+Do NOT generate placeholders.
+
+Do NOT generate TODOs.
+
+Do NOT generate pseudo code.
+
+Everything must work.
+
+Python Version
+
+3.13+
+
+Use modern Python.
+
+Follow PEP8.
+
+Include type hints.
+
+Include docstrings.
+
+Organize everything cleanly.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PURPOSE
+
+This module is ONLY responsible for styling.
+
+It contains
+
+Theme
+
+CSS
+
+Fonts
+
+Animations
+
+Terminal colors
+
+Component styles
+
+Responsive layout
+
+Utility helpers
+
+NO business logic.
+
+NO API calls.
+
+NO Streamlit pages.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+THEME
+
+Primary Theme
+
+Modern Linux Terminal
+
+Background
+
+#090909
+
+Secondary Background
+
+#111111
+
+Panels
+
+#161616
+
+Borders
+
+#2B2B2B
+
+Primary Text
+
+#F2F2F2
+
+Muted Text
+
+#9A9A9A
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+COLOR PALETTE
+
+Green
+
+#00FF88
+
+Blue
+
+#4FC3F7
+
+Yellow
+
+#FFD54F
+
+Orange
+
+#FF9800
+
+Red
+
+#FF5252
+
+Purple
+
+#B388FF
+
+Cyan
+
+#00E5FF
+
+White
+
+#FFFFFF
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ANSI COLORS
+
+Generate complete ANSI terminal colors.
+
+Black
+
+Red
+
+Green
+
+Yellow
+
+Blue
+
+Magenta
+
+Cyan
+
+White
+
+Bright versions
+
+Background variants
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FONTS
+
+Primary
+
+JetBrains Mono
+
+Fallback
+
+Fira Code
+
+Fallback
+
+IBM Plex Mono
+
+Fallback
+
+monospace
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Theme class
+
+Contains
+
+All colors
+
+Font sizes
+
+Spacing
+
+Border radius
+
+Animation timing
+
+Terminal dimensions
+
+Shadow definitions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Typography class
+
+Terminal font
+
+Headings
+
+Subtitles
+
+Body
+
+Code
+
+Small text
+
+Status text
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Spacing class
+
+Padding
+
+Margins
+
+Gap
+
+Container spacing
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+Animation class
+
+Cursor blink
+
+Fade in
+
+Slide up
+
+Typing animation
+
+Glow pulse
+
+Scanline movement
+
+Terminal boot animation
+
+Progress animation
+
+Loading dots
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement
+
+CSSBuilder
+
+Methods
+
+build()
+
+build_terminal()
+
+build_buttons()
+
+build_cards()
+
+build_badges()
+
+build_tables()
+
+build_scrollbars()
+
+build_progress()
+
+build_reports()
+
+build_invoice()
+
+build_header()
+
+build_footer()
+
+build_modals()
+
+build_forms()
+
+build_inputs()
+
+build_sidebar()
+
+build_downloads()
+
+build_mobile()
+
+build_desktop()
+
+Return ONE CSS string.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TERMINAL DESIGN
+
+The application should resemble
+
+$ clawhire
+
+────────────────────────────
+
+✔ Connected
+
+Wallet
+
+RPC
+
+Jobs
+
+Prompt
+
+Typing cursor
+
+Streaming output
+
+Everything inside a terminal window.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement CSS for
+
+Window title bar
+
+Traffic-light buttons
+
+Prompt line
+
+Terminal body
+
+Command history
+
+Output
+
+Error messages
+
+Success messages
+
+Warnings
+
+Information
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TERMINAL COLORS
+
+Prompt
+
+Green
+
+Commands
+
+Blue
+
+Errors
+
+Red
+
+Warnings
+
+Orange
+
+Info
+
+Cyan
+
+Completed
+
+Green
+
+Pending
+
+Yellow
+
+Wallet
+
+Purple
+
+Invoice
+
+Blue
+
+Reports
+
+Green
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement Components
+
+Status Badge
+
+Terminal Card
+
+Invoice Card
+
+Wallet Card
+
+Report Card
+
+Progress Card
+
+Service Card
+
+Notification
+
+Toast
+
+Divider
+
+Section Header
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Buttons
+
+Primary
+
+Secondary
+
+Danger
+
+Success
+
+Ghost
+
+Outline
+
+Hover effects
+
+Active effects
+
+Disabled
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Forms
+
+Input
+
+Textarea
+
+Select
+
+Checkbox
+
+Radio
+
+File Upload
+
+Focus animation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Tables
+
+Modern terminal tables.
+
+Striped rows.
+
+Hover animation.
+
+Rounded borders.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Progress Bars
+
+Animated.
+
+Gradient.
+
+Smooth transition.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Scrollbars
+
+Modern dark scrollbar.
+
+Rounded.
+
+Thin.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Loading Animations
+
+Blink cursor
+
+Typing cursor
+
+Three dots
+
+Spinner
+
+Terminal boot
+
+Progress pulse
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Responsive Design
+
+Desktop
+
+Laptop
+
+Tablet
+
+Mobile
+
+Everything must remain usable.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STREAMLIT OVERRIDES
+
+Completely remove the default Streamlit appearance.
+
+Hide
+
+Header
+
+Footer
+
+Deploy button
+
+Toolbar
+
+Menu
+
+Branding
+
+Container padding
+
+Default borders
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Visual Effects
+
+CRT glow
+
+Soft shadows
+
+Terminal glow
+
+Glass blur where appropriate
+
+Gradient borders
+
+Animated background glow
+
+Scanlines
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Helper Functions
+
+get_css()
+
+inject_css()
+
+terminal_style()
+
+status_color()
+
+severity_color()
+
+badge_style()
+
+generate_theme()
+
+All fully implemented.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Performance
+
+Cache generated CSS.
+
+Minimize string concatenations.
+
+Optimize rendering.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Documentation
+
+Every public function
+
+Every class
+
+Every constant
+
+Must include professional docstrings.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Output
+
+Generate ONE complete production-ready Python source file.
+
+No explanations.
+
+No markdown.
+
+Only Python code.
+
+The resulting styles.py must integrate directly with
+
+terminal.py
+
+components.py
+
+app.py
+
+and require no modifications.

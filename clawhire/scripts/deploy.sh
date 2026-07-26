@@ -63,7 +63,7 @@ check_build_artifacts() {
     log_info "Verifying release artifacts before deployment..."
     
     if [[ ! -f "${PROJECT_ROOT}/release/clawhire" ]]; then
-        log_error "Release binary not found. Please run scripts/build.sh first."
+        log_error "Release binary not found. Please run build.sh first."
         exit 1
     fi
     
@@ -89,8 +89,6 @@ deploy_to_railway() {
     cd "${PROJECT_ROOT}"
     
     log_info "Linking to Railway project..."
-    # Assumes project is already linked or RAILWAY_TOKEN is set in the environment
-    
     log_info "Pushing application to Railway.app..."
     if railway up --detach; then
         log_success "Successfully triggered deployment on Railway.app."
@@ -119,6 +117,46 @@ deploy_to_docker() {
     fi
 }
 
+deploy_to_render() {
+    log_info "Render target prioritized."
+    
+    if [[ -n "${RENDER_DEPLOY_HOOK_URL:-}" ]]; then
+        log_info "Triggering Render deployment via webhook..."
+        if curl -s -X POST "${RENDER_DEPLOY_HOOK_URL}" > /dev/null; then
+            log_success "Successfully triggered Render deployment webhook."
+        else
+            log_error "Failed to trigger Render webhook."
+            exit 1
+        fi
+    else
+        log_info "Render uses a GitOps flow. To deploy:"
+        log_info "1. Commit and push this project to GitHub/GitLab."
+        log_info "2. Ensure the Render dashboard is connected to your repository."
+        log_info "3. Set the 'Start Command' in Render to: ./start.sh"
+        log_success "Once pushed, Render will automatically build and start the application."
+    fi
+}
+
+deploy_to_generic() {
+    log_info "No cloud CLI detected. Falling back to generic/local environment deployment."
+    
+    local start_script="${PROJECT_ROOT}/start.sh"
+    
+    if [[ ! -f "${start_script}" ]]; then
+        log_error "Cannot find start.sh to launch the application."
+        exit 1
+    fi
+
+    if [[ ! -x "${start_script}" ]]; then
+        log_info "Making start.sh executable..."
+        chmod +x "${start_script}"
+    fi
+
+    log_success "Application is ready to run locally or on a VPS."
+    echo -e "${COLOR_INFO}To start the background processes, run:${COLOR_RESET}"
+    echo -e "${COLOR_SUCCESS}    ${start_script}${COLOR_RESET}"
+}
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # MAIN EXECUTION
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -128,14 +166,17 @@ main() {
     
     check_build_artifacts
     
-    # Auto-detect deployment preference based on available CLI tools
-    if command -v railway >/dev/null 2>&1; then
+    # Auto-detect deployment preference or allow forced target
+    local target="${DEPLOY_TARGET:-auto}"
+
+    if [[ "${target}" == "render" ]] || [[ -n "${RENDER_DEPLOY_HOOK_URL:-}" ]]; then
+        deploy_to_render
+    elif [[ "${target}" == "railway" ]] || command -v railway >/dev/null 2>&1; then
         deploy_to_railway
-    elif command -v docker >/dev/null 2>&1; then
+    elif [[ "${target}" == "docker" ]] || command -v docker >/dev/null 2>&1; then
         deploy_to_docker
     else
-        log_warning "No supported cloud CLI (Railway) or Docker detected."
-        log_info "To run locally in a production-like state, execute scripts/start.sh"
+        deploy_to_generic
     fi
     
     log_success "Deployment pipeline execution finished."

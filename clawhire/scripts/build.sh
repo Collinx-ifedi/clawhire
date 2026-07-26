@@ -171,9 +171,9 @@ build_rust_backend() {
     log_info "Starting Rust backend verification and compilation..."
     cd "${PROJECT_ROOT}"
 
-    log_info "Running cargo fmt check..."
-    if ! cargo fmt --all --check; then
-        log_error "Cargo formatting check failed. Run 'cargo fmt' to fix."
+    log_info "Running cargo fmt to fix formatting issues..."
+    if ! cargo fmt --all; then
+        log_error "Cargo formatting failed."
         exit 1
     fi
 

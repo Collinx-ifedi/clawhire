@@ -1,7 +1,7 @@
-//! Core module for ClawHire[span_0](start_span)[span_0](end_span)
+//! Core module for ClawHire
 //!
 //! This module contains the application runtime, shared state, global configuration,
-//! job models, and event system.[span_1](start_span)[span_1](end_span)
+//! job models, and event system.
 
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
@@ -17,7 +17,7 @@ use thiserror::Error;
 // Errors
 // ============================================================================
 
-/// Core errors for ClawHire application operations.[span_2](start_span)[span_2](end_span)
+/// Core errors for ClawHire application operations.
 #[derive(Error, Debug)]
 pub enum CoreError {
     #[error("Job not found: {0}")]
@@ -33,10 +33,10 @@ pub enum CoreError {
 }
 
 // ============================================================================
-// Enums[span_3](start_span)[span_3](end_span)
+// Enums
 // ============================================================================
 
-/// Represents the current state of a Job in the system.[span_4](start_span)[span_4](end_span)
+/// Represents the current state of a Job in the system.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum JobStatus {
     Created,
@@ -49,14 +49,14 @@ pub enum JobStatus {
     Archived,
 }
 
-/// The available blockchain services.[span_5](start_span)[span_5](end_span)
+/// The available blockchain services.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ServiceType {
     SmartContractReview,
     OnChainIntelligence,
 }
 
-/// Represents the evaluated risk level of an asset or smart contract.[span_6](start_span)[span_6](end_span)
+/// Represents the evaluated risk level of an asset or smart contract.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum RiskLevel {
     VeryLow,
@@ -66,7 +66,7 @@ pub enum RiskLevel {
     Critical,
 }
 
-/// Events that can be emitted within the application.[span_7](start_span)[span_7](end_span)
+/// Events that can be emitted within the application.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum EventType {
     JobCreated,
@@ -80,7 +80,7 @@ pub enum EventType {
 }
 
 // ============================================================================
-// Configuration Models[span_8](start_span)[span_8](end_span)
+// Configuration Models
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -204,7 +204,7 @@ pub struct FeatureFlags {
     pub job_history: bool,
 }
 
-/// Global Application Configuration mapping to configs/app.toml.[span_9](start_span)[span_9](end_span)
+/// Global Application Configuration mapping to configs/app.toml.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppConfig {
     pub application: ApplicationConfig,
@@ -223,10 +223,10 @@ pub struct AppConfig {
 }
 
 // ============================================================================
-// Core Models[span_10](start_span)[span_10](end_span)
+// Core Models
 // ============================================================================
 
-/// Represents an automated AI job within the system.[span_11](start_span)[span_11](end_span)
+/// Represents an automated AI job within the system.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Job {
     pub id: String,
@@ -240,7 +240,7 @@ pub struct Job {
     pub metadata: HashMap<String, String>,
 }
 
-/// Represents a customer invoice waiting for blockchain payment.[span_12](start_span)[span_12](end_span)
+/// Represents a customer invoice waiting for blockchain payment.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Invoice {
     pub invoice_id: String,
@@ -253,7 +253,7 @@ pub struct Invoice {
     pub signature: Option<String>,
 }
 
-/// Holds metadata about a generated professional report.[span_13](start_span)[span_13](end_span)
+/// Holds metadata about a generated professional report.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReportMetadata {
     pub report_id: String,
@@ -263,7 +263,7 @@ pub struct ReportMetadata {
     pub service: ServiceType,
 }
 
-/// An application event used for lifecycle tracking and observability.[span_14](start_span)[span_14](end_span)
+/// An application event used for lifecycle tracking and observability.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApplicationEvent {
     pub event_type: EventType,
@@ -276,7 +276,7 @@ pub struct ApplicationEvent {
 // Application State
 // ============================================================================
 
-/// Thread-safe shared state for the application.[span_15](start_span)[span_15](end_span)
+/// Thread-safe shared state for the application.
 #[derive(Debug)]
 pub struct AppState {
     pub config: AppConfig,
@@ -291,14 +291,14 @@ pub struct AppState {
 // Application Core
 // ============================================================================
 
-/// The main application wrapper containing state and lifecycle methods.[span_16](start_span)[span_16](end_span)
+/// The main application wrapper containing state and lifecycle methods.
 #[derive(Debug, Clone)]
 pub struct App {
     pub state: Arc<AppState>,
 }
 
 impl App {
-    /// Initializes a new instance of the App by loading configurations and state.[span_17](start_span)[span_17](end_span)
+    /// Initializes a new instance of the App by loading configurations and state.
     pub async fn new() -> Result<Self> {
         load_environment()?;
         let config = load_configuration().context("Failed to load application configuration")?;
@@ -327,7 +327,7 @@ impl App {
         Ok(app)
     }
 
-    /// Prepares required directories and performs system readiness checks.[span_18](start_span)[span_18](end_span)
+    /// Prepares required directories and performs system readiness checks.
     pub async fn initialize(&self) -> Result<()> {
         let storage = &self.state.config.storage;
         ensure_directory(&storage.invoice_directory).await?;
@@ -339,7 +339,7 @@ impl App {
         Ok(())
     }
 
-    /// Handles graceful shutdown of the application.[span_19](start_span)[span_19](end_span)
+    /// Handles graceful shutdown of the application.
     pub async fn shutdown(&self) -> Result<()> {
         info!("Initiating ClawHire shutdown sequence...");
         self.emit_event(
@@ -350,7 +350,7 @@ impl App {
         Ok(())
     }
 
-    /// Emits a system event and appends it to the internal event history.[span_20](start_span)[span_20](end_span)
+    /// Emits a system event and appends it to the internal event history.
     pub async fn emit_event(&self, event_type: EventType, job_id: Option<String>, message: String) -> Result<()> {
         let event = ApplicationEvent {
             event_type,
@@ -365,7 +365,7 @@ impl App {
         Ok(())
     }
 
-    /// Creates a new job and stores it in the active jobs pool.[span_21](start_span)[span_21](end_span)
+    /// Creates a new job and stores it in the active jobs pool.
     pub async fn create_job(&self, service: ServiceType, input_source: String, metadata: HashMap<String, String>) -> Result<Job> {
         let job = Job {
             id: generate_uuid(),
@@ -386,7 +386,7 @@ impl App {
         Ok(job)
     }
 
-    /// Updates the status of an existing job.[span_22](start_span)[span_22](end_span)
+    /// Updates the status of an existing job.
     pub async fn update_job_status(&self, job_id: &str, new_status: JobStatus) -> Result<()> {
         let mut active_jobs = self.state.active_jobs.write().await;
         
@@ -411,7 +411,7 @@ impl App {
         Ok(())
     }
 
-    /// Caches a generated invoice.[span_23](start_span)[span_23](end_span)
+    /// Caches a generated invoice.
     pub async fn store_invoice(&self, invoice: Invoice) -> Result<()> {
         let mut cache = self.state.invoice_cache.write().await;
         let invoice_id = invoice.invoice_id.clone();
@@ -421,7 +421,7 @@ impl App {
         Ok(())
     }
 
-    /// Caches the metadata for a generated report.[span_24](start_span)[span_24](end_span)
+    /// Caches the metadata for a generated report.
     pub async fn store_report(&self, report: ReportMetadata) -> Result<()> {
         let mut cache = self.state.report_cache.write().await;
         let job_id = report.job_id.clone();
@@ -431,7 +431,7 @@ impl App {
         Ok(())
     }
 
-    /// Retrieves a job by ID from the active or completed job pools.[span_25](start_span)[span_25](end_span)
+    /// Retrieves a job by ID from the active or completed job pools.
     pub async fn find_job(&self, job_id: &str) -> Result<Job> {
         let active = self.state.active_jobs.read().await;
         if let Some(job) = active.get(job_id) {
@@ -446,7 +446,7 @@ impl App {
         Err(CoreError::JobNotFound(job_id.to_string()).into())
     }
 
-    /// Retrieves an invoice by ID.[span_26](start_span)[span_26](end_span)
+    /// Retrieves an invoice by ID.
     pub async fn find_invoice(&self, invoice_id: &str) -> Result<Invoice> {
         let cache = self.state.invoice_cache.read().await;
         cache.get(invoice_id)
@@ -454,7 +454,7 @@ impl App {
             .ok_or_else(|| CoreError::InvoiceNotFound(invoice_id.to_string()).into())
     }
 
-    /// Retrieves report metadata by ID.[span_27](start_span)[span_27](end_span)
+    /// Retrieves report metadata by ID.
     pub async fn find_report(&self, report_id: &str) -> Result<ReportMetadata> {
         let cache = self.state.report_cache.read().await;
         cache.get(report_id)
@@ -462,7 +462,7 @@ impl App {
             .ok_or_else(|| CoreError::ReportNotFound(report_id.to_string()).into())
     }
 
-    /// Moves a job from the active pool to the completed/archived pool.[span_28](start_span)[span_28](end_span)
+    /// Moves a job from the active pool to the completed/archived pool.
     pub async fn archive_job(&self, job_id: &str) -> Result<()> {
         let mut active = self.state.active_jobs.write().await;
         let mut completed = self.state.completed_jobs.write().await;
@@ -480,7 +480,7 @@ impl App {
 // Utility Functions
 // ============================================================================
 
-/// Loads application configuration from TOML files and environment variables.[span_29](start_span)[span_29](end_span)
+/// Loads application configuration from TOML files and environment variables.
 pub fn load_configuration() -> Result<AppConfig> {
     let config = Config::builder()
         .add_source(File::with_name("configs/app.toml").required(true))
@@ -494,7 +494,7 @@ pub fn load_configuration() -> Result<AppConfig> {
     Ok(app_config)
 }
 
-/// Initializes the global application logger based on configuration settings.[span_30](start_span)[span_30](end_span)
+/// Initializes the global application logger based on configuration settings.
 pub fn initialize_logger(config: &LoggingConfig) -> Result<()> {
     let mut builder = env_logger::Builder::new();
     
@@ -515,17 +515,17 @@ pub fn initialize_logger(config: &LoggingConfig) -> Result<()> {
     Ok(())
 }
 
-/// Generates a universally unique identifier (UUID v4) as a String.[span_31](start_span)[span_31](end_span)
+/// Generates a universally unique identifier (UUID v4) as a String.
 pub fn generate_uuid() -> String {
     Uuid::new_v4().to_string()
 }
 
-/// Returns the current UTC date and time.[span_32](start_span)[span_32](end_span)
+/// Returns the current UTC date and time.
 pub fn utc_now() -> DateTime<Utc> {
     Utc::now()
 }
 
-/// Ensures a directory exists, creating it if necessary.[span_33](start_span)[span_33](end_span)
+/// Ensures a directory exists, creating it if necessary.
 pub async fn ensure_directory<P: AsRef<Path>>(path: P) -> Result<()> {
     if !path.as_ref().exists() {
         tokio::fs::create_dir_all(&path).await
@@ -534,7 +534,7 @@ pub async fn ensure_directory<P: AsRef<Path>>(path: P) -> Result<()> {
     Ok(())
 }
 
-/// Loads environment variables from a `.env` file into the process environment.[span_34](start_span)[span_34](end_span)
+/// Loads environment variables from a `.env` file into the process environment.
 pub fn load_environment() -> Result<()> {
     match dotenvy::dotenv() {
         Ok(_) => Ok(()),

@@ -4,7 +4,7 @@ cachetools
 loguru
 pydantic
 tenacity
-tomllib
+toml
 rich
 markdown
 reportlab

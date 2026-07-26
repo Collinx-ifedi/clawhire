@@ -555,13 +555,19 @@ async fn main() -> Result<()> {
     let app = match App::new().await {
         Ok(app) => app,
         Err(e) => {
-            // Utilizing the error! macro here consumes the import, fixing the Clippy lint
+            // eprintln! ALWAYS writes to stderr, regardless of whether the `log`
+            // crate has a logger registered yet. error! is a silent no-op until
+            // initialize_logger() has run — and if App::new() failed (e.g. during
+            // config loading, which happens before initialize_logger is called),
+            // that never happened. Print first so the failure is never invisible.
+            eprintln!("CRITICAL: Failed to initialize App instances: {:?}", e);
             error!("CRITICAL: Failed to initialize App instances: {:?}", e);
             std::process::exit(1);
         }
     };
 
     if let Err(e) = app.initialize().await {
+        eprintln!("CRITICAL: Failed to initialize application directories/state: {:?}", e);
         error!("CRITICAL: Failed to initialize application directories/state: {:?}", e);
         std::process::exit(1);
     }

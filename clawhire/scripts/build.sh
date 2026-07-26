@@ -231,7 +231,7 @@ validate_python_environment() {
 
     log_info "Verifying required Python module imports..."
     python3 -c "
-import streamlit, httpx, pydantic, loguru, toml, rich, markdown, reportlab
+import streamlit, httpx, pydantic, loguru, tomllib, rich, markdown, reportlab
 print('All critical Python packages imported successfully.')
 " || {
         log_error "One or more required Python packages failed to import."

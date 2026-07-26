@@ -1,0 +1,10 @@
+streamlit
+httpx
+cachetools
+loguru
+pydantic
+tenacity
+tomllib
+rich
+markdown
+reportlab

@@ -140,7 +140,7 @@ deploy_to_render() {
 deploy_to_generic() {
     log_info "No cloud CLI detected. Falling back to generic/local environment deployment."
     
-    local start_script="${PROJECT_ROOT}/start.sh"
+    local start_script="${PROJECT_ROOT}/scripts/start.sh"
     
     if [[ ! -f "${start_script}" ]]; then
         log_error "Cannot find start.sh to launch the application."

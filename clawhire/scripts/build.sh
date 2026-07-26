@@ -1,3 +1,5 @@
+pip install streamlit httpx pydantic loguru toml rich markdown reportlab
+
 #!/usr/bin/env bash
 #
 # ClawHire - Production Build & Release Script

@@ -184,7 +184,8 @@ start_rust_backend() {
     for ((i=1; i<=retries; i++)); do
         if ! kill -0 "${BACKEND_PID}" 2>/dev/null; then
             log_error "Backend process died unexpectedly during startup."
-            log_error "Check logs/clawhire.log for details."
+            log_error "DUMPING CRASH LOGS BELOW:"
+            cat "${PROJECT_ROOT}/logs/clawhire.log"
             exit 1
         fi
         sleep "${wait_time}"
@@ -258,7 +259,8 @@ start_python_frontend() {
     sleep 3
     if ! kill -0 "${FRONTEND_PID}" 2>/dev/null; then
         log_error "Streamlit frontend died unexpectedly."
-        log_error "Check logs/streamlit.log for details."
+        log_error "DUMPING CRASH LOGS BELOW:"
+        cat "${PROJECT_ROOT}/logs/streamlit.log"
         exit 1
     fi
     

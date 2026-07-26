@@ -544,3 +544,44 @@ pub fn load_environment() -> Result<()> {
         }
     }
 }
+
+// ============================================================================
+// Main Entry Point
+// ============================================================================
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Initialize the application and capture any startup errors
+    let app = match App::new().await {
+        Ok(app) => app,
+        Err(e) => {
+            // Utilizing the error! macro here consumes the import, fixing the Clippy lint
+            error!("CRITICAL: Failed to initialize App instances: {:?}", e);
+            std::process::exit(1);
+        }
+    };
+
+    if let Err(e) = app.initialize().await {
+        error!("CRITICAL: Failed to initialize application directories/state: {:?}", e);
+        std::process::exit(1);
+    }
+
+    info!("ClawHire application is running. Awaiting shutdown signal...");
+
+    // Block main thread until a termination signal is received
+    match tokio::signal::ctrl_c().await {
+        Ok(()) => {
+            info!("Shutdown signal received.");
+        }
+        Err(err) => {
+            error!("Unable to listen for shutdown signal: {}", err);
+        }
+    }
+
+    if let Err(e) = app.shutdown().await {
+        error!("Error during graceful shutdown: {:?}", e);
+    }
+
+    info!("ClawHire shutdown complete.");
+    Ok(())
+}

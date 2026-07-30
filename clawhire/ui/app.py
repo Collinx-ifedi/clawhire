@@ -277,8 +277,7 @@ class Router:
                 self.context.notifications.push("Failed to connect to backend.", "error")
                 st.session_state.app_state.state = AppState.ERROR
         asyncio.run(boot_sequence())
-        if st.session_state.app_state.state == AppState.READY:
-            st.rerun()
+        st.rerun()
 
     def _handle_ready(self) -> None:
         components.TerminalBanner("1.0.0", "Production", "Mainnet", st.session_state.app_state.wallet.address if st.session_state.app_state.wallet else "Unknown").render()

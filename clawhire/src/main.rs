@@ -484,7 +484,7 @@ impl App {
 pub fn load_configuration() -> Result<AppConfig> {
     let config = Config::builder()
         .add_source(File::with_name("configs/app.toml").required(true))
-        .add_source(Environment::with_prefix("APP").separator("_"))
+        .add_source(Environment::with_prefix("APP").separator("__"))
         .build()
         .map_err(|e| CoreError::ConfigError(e.to_string()))?;
 

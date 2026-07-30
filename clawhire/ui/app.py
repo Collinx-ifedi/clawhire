@@ -81,12 +81,12 @@ class ThemeManager:
 
     def load(self) -> str:
         """Loads terminal CSS.[span_7](start_span)[span_7](end_span)"""
-        return styles.get_terminal_css()
+        return styles.get_css()
 
     def apply(self) -> None:
         """Injects CSS into Streamlit.[span_8](start_span)[span_8](end_span)"""
         css = self.load()
-        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+        st.markdown(css, unsafe_allow_html=True)
 
 
 class NotificationCenter:

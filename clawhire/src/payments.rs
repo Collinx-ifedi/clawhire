@@ -499,7 +499,11 @@ impl PaymentEngine {
         };
 
         self.store.store_invoice(invoice.clone()).await?;
-        
+
+        self.app.set_job_invoice(job_id, &invoice.invoice_id)
+            .await
+            .map_err(|e| PaymentError::InvoiceError(e.to_string()))?;
+
         self.app.update_job_status(job_id, JobStatus::Quoted)
             .await
             .map_err(|e| PaymentError::InvoiceError(e.to_string()))?;
@@ -547,7 +551,7 @@ impl PaymentEngine {
             let job_id_str = job_id.clone();
             drop(jobs); // Drop read lock before updating
             
-            self.app.update_job_status(&job_id_str, JobStatus::PaymentConfirmed)
+            self.app.update_job_status(&job_id_str, JobStatus::PaymentDetected)
                 .await
                 .map_err(|e| PaymentError::InvoiceError(e.to_string()))?;
                 
@@ -559,6 +563,60 @@ impl PaymentEngine {
         }
 
         Ok(())
+    }
+
+    /// Performs a single check for an incoming payment against a pending
+    /// invoice, updating and persisting its status based on what is
+    /// observed. Unlike `PaymentMonitor::start`, this checks once and
+    /// returns immediately - intended to be called from a short-lived CLI
+    /// invocation rather than a long-running background loop.
+    pub async fn check_payment(&self, invoice_id: &str) -> Result<CoreInvoice, PaymentError> {
+        let mut invoice = self.store.get_invoice(invoice_id).await?;
+
+        // Already resolved - nothing further to check.
+        if matches!(
+            invoice.status.as_str(),
+            "Confirmed" | "Expired" | "Failed" | "Cancelled"
+        ) {
+            return Ok(invoice);
+        }
+
+        if Utc::now() > invoice.expires_at {
+            invoice.status = InvoiceStatus::Expired.to_string();
+            self.store.store_invoice(invoice.clone()).await?;
+            return Ok(invoice);
+        }
+
+        let quote = PaymentQuote {
+            job_id: "".to_string(),
+            service: ServiceType::SmartContractReview,
+            amount: invoice.amount,
+            currency: invoice.currency.clone(),
+            wallet_address: invoice.wallet.clone(),
+            invoice_reference: invoice.invoice_id.clone(),
+            expires_at: invoice.expires_at,
+        };
+
+        match self.provider.watch(&quote).await {
+            Ok(PaymentStatus::Detected) => {
+                invoice.status = InvoiceStatus::PendingConfirmation.to_string();
+                self.store.store_invoice(invoice.clone()).await?;
+            }
+            Ok(PaymentStatus::Confirmed) => {
+                invoice.status = InvoiceStatus::Confirmed.to_string();
+                self.store.store_invoice(invoice.clone()).await?;
+            }
+            Ok(PaymentStatus::Expired) => {
+                invoice.status = InvoiceStatus::Expired.to_string();
+                self.store.store_invoice(invoice.clone()).await?;
+            }
+            Ok(_) => {}
+            Err(e) => {
+                warn!("Failed to watch invoice {}: {}", invoice.invoice_id, e);
+            }
+        }
+
+        Ok(invoice)
     }
 
     /// Cancels an invoice manually.

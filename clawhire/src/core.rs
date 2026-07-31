@@ -8,7 +8,7 @@ use chrono::{DateTime, Utc};
 use config::{Config, Environment, File};
 use log::{error, info, LevelFilter};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, path::Path, sync::Arc};
+use std::{collections::HashMap, path::{Path, PathBuf}, sync::Arc};
 use tokio::sync::RwLock;
 use uuid::Uuid;
 use thiserror::Error;
@@ -42,15 +42,17 @@ pub enum JobStatus {
     Created,
     Quoted,
     AwaitingPayment,
-    PaymentConfirmed,
+    PaymentDetected,
     Executing,
     GeneratingReport,
     Completed,
+    Failed,
+    Cancelled,
     Archived,
 }
 
 /// The available blockchain services.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum ServiceType {
     SmartContractReview,
     OnChainIntelligence,
@@ -145,6 +147,8 @@ pub struct PaymentConfig {
 pub struct AIConfig {
     pub provider: String,
     pub model: String,
+    #[serde(default)]
+    pub api_key: String,
     pub temperature: f32,
     pub max_tokens: usize,
     pub request_timeout_seconds: u64,
@@ -272,6 +276,50 @@ pub struct ApplicationEvent {
 }
 
 // ============================================================================
+// Persistence
+// ============================================================================
+//
+// RustCLIAdapter (the Python frontend's default backend adapter) spawns a
+// brand-new OS process for every single command. Without persistence, each
+// invocation would start from empty in-memory maps and lose every job and
+// invoice created by the previous invocation. These helpers back the job
+// and invoice pools with JSON files on disk so state survives across
+// process boundaries.
+
+/// On-disk snapshot of the job pools.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+struct JobsSnapshot {
+    #[serde(default)]
+    active: HashMap<String, Job>,
+    #[serde(default)]
+    completed: HashMap<String, Job>,
+}
+
+/// Reads a JSON file into `T`, returning `T::default()` if the file is
+/// missing or unreadable (e.g. first run, or a corrupted/partial write).
+async fn read_json_or_default<T: for<'de> Deserialize<'de> + Default>(path: &Path) -> T {
+    match tokio::fs::read(path).await {
+        Ok(bytes) => serde_json::from_slice(&bytes).unwrap_or_default(),
+        Err(_) => T::default(),
+    }
+}
+
+/// Writes `value` to `path` as pretty JSON, atomically (write to a temp
+/// file in the same directory, then rename) so a crash mid-write can never
+/// leave a truncated/corrupt state file behind.
+async fn write_json_atomic<T: Serialize>(path: &Path, value: &T) -> Result<()> {
+    if let Some(parent) = path.parent() {
+        tokio::fs::create_dir_all(parent).await.map_err(CoreError::IoError)?;
+    }
+    let bytes = serde_json::to_vec_pretty(value)
+        .map_err(|e| CoreError::ConfigError(format!("Failed to serialize state: {}", e)))?;
+    let tmp_path = path.with_extension("json.tmp");
+    tokio::fs::write(&tmp_path, &bytes).await.map_err(CoreError::IoError)?;
+    tokio::fs::rename(&tmp_path, path).await.map_err(CoreError::IoError)?;
+    Ok(())
+}
+
+// ============================================================================
 // Application State
 // ============================================================================
 
@@ -284,6 +332,25 @@ pub struct AppState {
     pub invoice_cache: Arc<RwLock<HashMap<String, Invoice>>>,
     pub report_cache: Arc<RwLock<HashMap<String, ReportMetadata>>>,
     pub event_history: Arc<RwLock<Vec<ApplicationEvent>>>,
+    jobs_path: PathBuf,
+    invoices_path: PathBuf,
+}
+
+impl AppState {
+    /// Persists the current job pools to disk.
+    async fn persist_jobs(&self) -> Result<()> {
+        let snapshot = JobsSnapshot {
+            active: self.active_jobs.read().await.clone(),
+            completed: self.completed_jobs.read().await.clone(),
+        };
+        write_json_atomic(&self.jobs_path, &snapshot).await
+    }
+
+    /// Persists the current invoice cache to disk.
+    async fn persist_invoices(&self) -> Result<()> {
+        let cache = self.invoice_cache.read().await.clone();
+        write_json_atomic(&self.invoices_path, &cache).await
+    }
 }
 
 // ============================================================================
@@ -304,13 +371,21 @@ impl App {
         
         initialize_logger(&config.logging)?;
 
+        let jobs_path = Path::new(&config.storage.history_directory).join("jobs.json");
+        let invoices_path = Path::new(&config.storage.invoice_directory).join("invoices.json");
+
+        let jobs_snapshot: JobsSnapshot = read_json_or_default(&jobs_path).await;
+        let invoice_cache: HashMap<String, Invoice> = read_json_or_default(&invoices_path).await;
+
         let state = AppState {
             config,
-            active_jobs: Arc::new(RwLock::new(HashMap::new())),
-            completed_jobs: Arc::new(RwLock::new(HashMap::new())),
-            invoice_cache: Arc::new(RwLock::new(HashMap::new())),
+            active_jobs: Arc::new(RwLock::new(jobs_snapshot.active)),
+            completed_jobs: Arc::new(RwLock::new(jobs_snapshot.completed)),
+            invoice_cache: Arc::new(RwLock::new(invoice_cache)),
             report_cache: Arc::new(RwLock::new(HashMap::new())),
             event_history: Arc::new(RwLock::new(Vec::new())),
+            jobs_path,
+            invoices_path,
         };
 
         let app = Self {
@@ -378,24 +453,30 @@ impl App {
             metadata,
         };
 
-        let mut active_jobs = self.state.active_jobs.write().await;
-        active_jobs.insert(job.id.clone(), job.clone());
-        
+        {
+            let mut active_jobs = self.state.active_jobs.write().await;
+            active_jobs.insert(job.id.clone(), job.clone());
+        }
+        self.state.persist_jobs().await?;
+
         self.emit_event(EventType::JobCreated, Some(job.id.clone()), format!("Job created for service {:?}", job.service)).await?;
         Ok(job)
     }
 
     /// Updates the status of an existing job.
     pub async fn update_job_status(&self, job_id: &str, new_status: JobStatus) -> Result<()> {
-        let mut active_jobs = self.state.active_jobs.write().await;
-        
-        let job = active_jobs
-            .get_mut(job_id)
-            .ok_or_else(|| CoreError::JobNotFound(job_id.to_string()))?;
-            
-        job.status = new_status.clone();
-        job.updated_at = utc_now();
-        
+        {
+            let mut active_jobs = self.state.active_jobs.write().await;
+
+            let job = active_jobs
+                .get_mut(job_id)
+                .ok_or_else(|| CoreError::JobNotFound(job_id.to_string()))?;
+
+            job.status = new_status.clone();
+            job.updated_at = utc_now();
+        }
+        self.state.persist_jobs().await?;
+
         // Handle specialized status events
         match new_status {
             JobStatus::Executing => {
@@ -410,12 +491,59 @@ impl App {
         Ok(())
     }
 
+    /// Links a generated invoice to the job that requested it, so payment
+    /// confirmation can look the job back up from the invoice alone.
+    pub async fn set_job_invoice(&self, job_id: &str, invoice_id: &str) -> Result<()> {
+        {
+            let mut active_jobs = self.state.active_jobs.write().await;
+            let job = active_jobs
+                .get_mut(job_id)
+                .ok_or_else(|| CoreError::JobNotFound(job_id.to_string()))?;
+            job.invoice_id = Some(invoice_id.to_string());
+            job.updated_at = utc_now();
+        }
+        self.state.persist_jobs().await
+    }
+
+    /// Attaches a generated report's ID to the job it was produced for.
+    pub async fn set_job_report(&self, job_id: &str, report_id: &str) -> Result<()> {
+        {
+            let mut active_jobs = self.state.active_jobs.write().await;
+            let job = active_jobs
+                .get_mut(job_id)
+                .ok_or_else(|| CoreError::JobNotFound(job_id.to_string()))?;
+            job.report_id = Some(report_id.to_string());
+            job.updated_at = utc_now();
+        }
+        self.state.persist_jobs().await
+    }
+
+    /// Finds the job that a given invoice was issued for, if any.
+    pub async fn find_job_by_invoice(&self, invoice_id: &str) -> Option<Job> {
+        let active = self.state.active_jobs.read().await;
+        if let Some(job) = active.values().find(|j| j.invoice_id.as_deref() == Some(invoice_id)) {
+            return Some(job.clone());
+        }
+        let completed = self.state.completed_jobs.read().await;
+        completed.values().find(|j| j.invoice_id.as_deref() == Some(invoice_id)).cloned()
+    }
+
+    /// Lists every job, active and completed.
+    pub async fn list_jobs(&self) -> Vec<Job> {
+        let mut jobs: Vec<Job> = self.state.active_jobs.read().await.values().cloned().collect();
+        jobs.extend(self.state.completed_jobs.read().await.values().cloned());
+        jobs
+    }
+
     /// Caches a generated invoice.
     pub async fn store_invoice(&self, invoice: Invoice) -> Result<()> {
-        let mut cache = self.state.invoice_cache.write().await;
         let invoice_id = invoice.invoice_id.clone();
-        cache.insert(invoice.invoice_id.clone(), invoice);
-        
+        {
+            let mut cache = self.state.invoice_cache.write().await;
+            cache.insert(invoice.invoice_id.clone(), invoice);
+        }
+        self.state.persist_invoices().await?;
+
         self.emit_event(EventType::InvoiceCreated, None, format!("Invoice {} stored", invoice_id)).await?;
         Ok(())
     }
@@ -463,15 +591,17 @@ impl App {
 
     /// Moves a job from the active pool to the completed/archived pool.
     pub async fn archive_job(&self, job_id: &str) -> Result<()> {
-        let mut active = self.state.active_jobs.write().await;
-        let mut completed = self.state.completed_jobs.write().await;
-        
-        let mut job = active.remove(job_id).ok_or_else(|| CoreError::JobNotFound(job_id.to_string()))?;
-        job.status = JobStatus::Archived;
-        job.updated_at = utc_now();
-        
-        completed.insert(job.id.clone(), job);
-        Ok(())
+        {
+            let mut active = self.state.active_jobs.write().await;
+            let mut completed = self.state.completed_jobs.write().await;
+
+            let mut job = active.remove(job_id).ok_or_else(|| CoreError::JobNotFound(job_id.to_string()))?;
+            job.status = JobStatus::Archived;
+            job.updated_at = utc_now();
+
+            completed.insert(job.id.clone(), job);
+        }
+        self.state.persist_jobs().await
     }
 }
 

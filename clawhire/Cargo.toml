@@ -197,6 +197,8 @@ clap = { version = "4", features = ["derive"] }
 
 solana-sdk = "3"
 solana-client = "3"
+solana-commitment-config = "3"
+solana-transaction-status-client-types = "3"
 
 #############################################
 # Git Repository Support

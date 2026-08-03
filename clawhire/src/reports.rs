@@ -4,18 +4,15 @@
 //! and retrieving reports produced by ClawHire services. It transforms structured
 //! service responses into professional Markdown and PDF reports.
 
-use crate::core::{App, EventType, RiskLevel, ServiceType};
+use crate::core::{App, EventType, ServiceType};
 use crate::services::ServiceResponse;
-use anyhow::Result as AnyResult;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use config::{Config, File as ConfigFile};
-use log::{error, info, warn};
+use log::info;
 use printpdf::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs::File as StdFile;
-use std::io::BufWriter;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use thiserror::Error;
@@ -211,34 +208,48 @@ pub struct PDFRenderer;
 
 impl PDFRenderer {
     pub fn render_to_file(markdown_content: &str, output_path: &Path) -> Result<(), ReportError> {
-        let (doc, page1, layer1) = PdfDocument::new("ClawHire Professional Report", Pt(595.27), Pt(841.89), "Layer 1");
-        let current_layer = doc.get_page(page1).get_layer(layer1);
+        let mut doc = PdfDocument::new("ClawHire Professional Report");
 
-        let font = doc.add_builtin_font(BuiltinFont::Helvetica)
-            .map_err(|e| ReportError::PDFError(format!("Failed to load font: {}", e)))?;
+        let mut ops: Vec<Op> = Vec::new();
+        let mut y = 800.0;
 
-        current_layer.use_text(24, 50, 800, &font, "ClawHire Intelligence & Audit Report");
-        
+        ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
+        ops.push(Op::WriteTextBuiltinFont {
+            items: vec![TextItem::Text("ClawHire Intelligence & Audit Report".to_string())],
+            size: Pt(24.0),
+            font: BuiltinFont::Helvetica,
+        });
+        y -= 40.0;
+
         // Write simple line-by-line rendering from markdown text to PDF surface
-        let mut y_offset = 750.0;
         for line in markdown_content.lines() {
-            if y_offset < 50.0 {
+            if y < 50.0 {
                 break; // Basic single page overflow guard for minimal renderer
             }
             if !line.starts_with('#') && !line.is_empty() {
-                current_layer.use_text(10, 50, y_offset, &font, line);
-                y_offset -= 20.0;
+                ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
+                ops.push(Op::WriteTextBuiltinFont {
+                    items: vec![TextItem::Text(line.to_string())],
+                    size: Pt(10.0),
+                    font: BuiltinFont::Helvetica,
+                });
+                y -= 20.0;
             } else if line.starts_with('#') {
-                y_offset -= 10.0;
-                current_layer.use_text(14, 50, y_offset, &font, line.trim_start_matches('#').trim());
-                y_offset -= 25.0;
+                y -= 10.0;
+                ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
+                ops.push(Op::WriteTextBuiltinFont {
+                    items: vec![TextItem::Text(line.trim_start_matches('#').trim().to_string())],
+                    size: Pt(14.0),
+                    font: BuiltinFont::Helvetica,
+                });
+                y -= 25.0;
             }
         }
 
-        let file = StdFile::create(output_path)
-            .map_err(|e| ReportError::PDFError(e.to_string()))?;
-        let mut buf_writer = BufWriter::new(file);
-        doc.save(&mut buf_writer)
+        let page = PdfPage::new(Pt(595.27), Pt(841.89), ops);
+        let pdf_bytes: Vec<u8> = doc.with_pages(vec![page]).save(&PdfSaveOptions::default());
+
+        std::fs::write(output_path, pdf_bytes)
             .map_err(|e| ReportError::PDFError(format!("Failed to save PDF: {}", e)))?;
 
         Ok(())

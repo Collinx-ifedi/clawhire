@@ -4,8 +4,8 @@
 //! jobs, executing the requested blockchain service, and returning structured results
 //! for report generation.
 
-use crate::core::{AppConfig, RiskLevel, ServiceType};
-use anyhow::{Context, Result};
+use crate::core::{RiskLevel, ServiceType};
+use anyhow::Result;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use git2::Repository;

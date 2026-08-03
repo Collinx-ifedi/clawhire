@@ -5,21 +5,19 @@
 //! and orchestrating state changes once payment is confirmed.
 
 use crate::core::{App, EventType, JobStatus, ServiceType, Invoice as CoreInvoice};
-use anyhow::{Context, Result as AnyResult};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use config::{Config, File as ConfigFile};
-use log::{debug, error, info, warn};
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::commitment_config::CommitmentConfig;
+use solana_commitment_config::CommitmentConfig;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Signature;
-use std::collections::HashMap;
+use solana_transaction_status_client_types::UiTransactionEncoding;
 use std::str::FromStr;
 use std::sync::Arc;
 use thiserror::Error;
-use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
@@ -337,8 +335,8 @@ impl PaymentProvider for SolanaPaymentProvider {
         let signature = Signature::from_str(signature_str)
             .map_err(|_| PaymentError::PaymentVerificationError("Invalid transaction signature".to_string()))?;
 
-        let tx = self.rpc_client.get_transaction(&signature, solana_client::rpc_config::RpcTransactionConfig {
-            encoding: Some(solana_transaction_status::UiTransactionEncoding::JsonParsed),
+        let tx = self.rpc_client.get_transaction_with_config(&signature, solana_client::rpc_config::RpcTransactionConfig {
+            encoding: Some(UiTransactionEncoding::JsonParsed),
             commitment: Some(CommitmentConfig::confirmed()),
             max_supported_transaction_version: Some(0),
         })

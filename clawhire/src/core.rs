@@ -6,7 +6,7 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use config::{Config, Environment, File};
-use log::{error, info, LevelFilter};
+use log::{info, LevelFilter};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::{Path, PathBuf}, sync::Arc};
 use tokio::sync::RwLock;

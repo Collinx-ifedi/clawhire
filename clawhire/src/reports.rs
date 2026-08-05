@@ -210,14 +210,16 @@ impl PDFRenderer {
     pub fn render_to_file(markdown_content: &str, output_path: &Path) -> Result<(), ReportError> {
         let mut doc = PdfDocument::new("ClawHire Professional Report");
 
-        let mut ops: Vec<Op> = Vec::new();
+        let mut ops: Vec<Op> = vec![Op::StartTextSection];
         let mut y = 800.0;
 
-        ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
-        ops.push(Op::WriteTextBuiltinFont {
-            items: vec![TextItem::Text("ClawHire Intelligence & Audit Report".to_string())],
+        ops.push(Op::SetFont {
+            font: PdfFontHandle::Builtin(BuiltinFont::Helvetica),
             size: Pt(24.0),
-            font: BuiltinFont::Helvetica,
+        });
+        ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
+        ops.push(Op::ShowText {
+            items: vec![TextItem::Text("ClawHire Intelligence & Audit Report".to_string())],
         });
         y -= 40.0;
 
@@ -227,27 +229,34 @@ impl PDFRenderer {
                 break; // Basic single page overflow guard for minimal renderer
             }
             if !line.starts_with('#') && !line.is_empty() {
-                ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
-                ops.push(Op::WriteTextBuiltinFont {
-                    items: vec![TextItem::Text(line.to_string())],
+                ops.push(Op::SetFont {
+                    font: PdfFontHandle::Builtin(BuiltinFont::Helvetica),
                     size: Pt(10.0),
-                    font: BuiltinFont::Helvetica,
+                });
+                ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
+                ops.push(Op::ShowText {
+                    items: vec![TextItem::Text(line.to_string())],
                 });
                 y -= 20.0;
             } else if line.starts_with('#') {
                 y -= 10.0;
-                ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
-                ops.push(Op::WriteTextBuiltinFont {
-                    items: vec![TextItem::Text(line.trim_start_matches('#').trim().to_string())],
+                ops.push(Op::SetFont {
+                    font: PdfFontHandle::Builtin(BuiltinFont::Helvetica),
                     size: Pt(14.0),
-                    font: BuiltinFont::Helvetica,
+                });
+                ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
+                ops.push(Op::ShowText {
+                    items: vec![TextItem::Text(line.trim_start_matches('#').trim().to_string())],
                 });
                 y -= 25.0;
             }
         }
 
-        let page = PdfPage::new(Pt(595.27), Pt(841.89), ops);
-        let pdf_bytes: Vec<u8> = doc.with_pages(vec![page]).save(&PdfSaveOptions::default());
+        ops.push(Op::EndTextSection);
+
+        let page = PdfPage::new(Mm(210.0), Mm(297.0), ops);
+        let mut warnings = Vec::new();
+        let pdf_bytes: Vec<u8> = doc.with_pages(vec![page]).save(&PdfSaveOptions::default(), &mut warnings);
 
         std::fs::write(output_path, pdf_bytes)
             .map_err(|e| ReportError::PDFError(format!("Failed to save PDF: {}", e)))?;

@@ -214,10 +214,12 @@ impl PDFRenderer {
         let mut y = 800.0;
 
         ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
-        ops.push(Op::WriteTextBuiltinFont {
-            items: vec![TextItem::Text("ClawHire Intelligence & Audit Report".to_string())],
+        ops.push(Op::SetFont {
+            font: PdfFontHandle::Builtin(BuiltinFont::Helvetica),
             size: Pt(24.0),
-            font: BuiltinFont::Helvetica,
+        });
+        ops.push(Op::ShowText {
+            items: vec![TextItem::Text("ClawHire Intelligence & Audit Report".to_string())],
         });
         y -= 40.0;
 
@@ -228,19 +230,23 @@ impl PDFRenderer {
             }
             if !line.starts_with('#') && !line.is_empty() {
                 ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
-                ops.push(Op::WriteTextBuiltinFont {
-                    items: vec![TextItem::Text(line.to_string())],
+                ops.push(Op::SetFont {
+                    font: PdfFontHandle::Builtin(BuiltinFont::Helvetica),
                     size: Pt(10.0),
-                    font: BuiltinFont::Helvetica,
+                });
+                ops.push(Op::ShowText {
+                    items: vec![TextItem::Text(line.to_string())],
                 });
                 y -= 20.0;
             } else if line.starts_with('#') {
                 y -= 10.0;
                 ops.push(Op::SetTextCursor { pos: Point { x: Pt(50.0), y: Pt(y) } });
-                ops.push(Op::WriteTextBuiltinFont {
-                    items: vec![TextItem::Text(line.trim_start_matches('#').trim().to_string())],
+                ops.push(Op::SetFont {
+                    font: PdfFontHandle::Builtin(BuiltinFont::Helvetica),
                     size: Pt(14.0),
-                    font: BuiltinFont::Helvetica,
+                });
+                ops.push(Op::ShowText {
+                    items: vec![TextItem::Text(line.trim_start_matches('#').trim().to_string())],
                 });
                 y -= 25.0;
             }

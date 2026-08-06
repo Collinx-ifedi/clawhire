@@ -401,7 +401,7 @@ impl SmartContractReviewService {
     fn collect_source_files(&self, dir: &Path) -> Result<Vec<PathBuf>, ServiceError> {
         let mut files = Vec::new();
         for entry in WalkDir::new(dir).into_iter().filter_map(|e| e.ok()) {
-            if entry.path().extension().map_or(false, |ext| ext == "rs") {
+            if entry.path().extension().is_some_and(|ext| ext == "rs") {
                 files.push(entry.path().to_path_buf());
             }
         }

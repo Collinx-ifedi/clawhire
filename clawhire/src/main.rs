@@ -18,6 +18,14 @@
 //! `payments.rs`, `reports.rs`) specifically so that state survives across
 //! these separate per-command process invocations.
 
+// Several modules expose a broader surface (manual payment verification,
+// background monitoring, report archival, service introspection) than the
+// one-shot CLI currently calls into - kept intentionally for the daemon
+// mode and future subcommands described above, rather than being dead
+// leftovers. Suppressed here instead of scattering #[allow(dead_code)]
+// across every individual item.
+#![allow(dead_code)]
+
 mod core;
 mod payments;
 mod reports;
@@ -424,14 +432,12 @@ async fn cmd_payments_wait(app: &Arc<App>, invoice_id: &str) -> Result<Output> {
 
     let paid = matches!(invoice.status.as_str(), "PendingConfirmation" | "Confirmed");
 
-    if paid {
-        if let Some(job) = app.find_job_by_invoice(invoice_id).await {
-            if matches!(job.status, JobStatus::Quoted | JobStatus::AwaitingPayment) {
-                if let Err(e) = execute_job_pipeline(app, &job).await {
-                    error!("Job execution pipeline failed for {}: {:#}", job.id, e);
-                }
-            }
-        }
+    if paid
+        && let Some(job) = app.find_job_by_invoice(invoice_id).await
+        && matches!(job.status, JobStatus::Quoted | JobStatus::AwaitingPayment)
+        && let Err(e) = execute_job_pipeline(app, &job).await
+    {
+        error!("Job execution pipeline failed for {}: {:#}", job.id, e);
     }
 
     let status_str = match invoice.status.as_str() {

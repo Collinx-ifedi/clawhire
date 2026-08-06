@@ -64,17 +64,18 @@ pub enum InvoiceStatus {
     Cancelled,
 }
 
-impl ToString for InvoiceStatus {
-    fn to_string(&self) -> String {
-        match self {
-            InvoiceStatus::Created => "Created".to_string(),
-            InvoiceStatus::AwaitingPayment => "AwaitingPayment".to_string(),
-            InvoiceStatus::PendingConfirmation => "PendingConfirmation".to_string(),
-            InvoiceStatus::Confirmed => "Confirmed".to_string(),
-            InvoiceStatus::Expired => "Expired".to_string(),
-            InvoiceStatus::Failed => "Failed".to_string(),
-            InvoiceStatus::Cancelled => "Cancelled".to_string(),
-        }
+impl std::fmt::Display for InvoiceStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            InvoiceStatus::Created => "Created",
+            InvoiceStatus::AwaitingPayment => "AwaitingPayment",
+            InvoiceStatus::PendingConfirmation => "PendingConfirmation",
+            InvoiceStatus::Confirmed => "Confirmed",
+            InvoiceStatus::Expired => "Expired",
+            InvoiceStatus::Failed => "Failed",
+            InvoiceStatus::Cancelled => "Cancelled",
+        };
+        write!(f, "{}", s)
     }
 }
 

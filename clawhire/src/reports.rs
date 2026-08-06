@@ -28,21 +28,21 @@ use uuid::Uuid;
 #[derive(Error, Debug)]
 pub enum ReportError {
     #[error("Report generation error: {0}")]
-    ReportGenerationError(String),
+    ReportGeneration(String),
     #[error("Markdown rendering error: {0}")]
-    MarkdownError(String),
+    Markdown(String),
     #[error("PDF rendering error: {0}")]
-    PDFError(String),
+    Pdf(String),
     #[error("Storage error: {0}")]
-    StorageError(String),
+    Storage(String),
     #[error("Configuration error: {0}")]
-    ConfigurationError(String),
+    Configuration(String),
     #[error("Template error: {0}")]
-    TemplateError(String),
+    Template(String),
     #[error("Serialization error: {0}")]
-    SerializationError(String),
+    Serialization(String),
     #[error("Filesystem error: {0}")]
-    FileSystemError(String),
+    FileSystem(String),
 }
 
 // ============================================================================
@@ -56,12 +56,13 @@ pub enum ReportType {
     OnChainIntelligence,
 }
 
-impl ToString for ReportType {
-    fn to_string(&self) -> String {
-        match self {
-            ReportType::SmartContractReview => "SmartContractReview".to_string(),
-            ReportType::OnChainIntelligence => "OnChainIntelligence".to_string(),
-        }
+impl std::fmt::Display for ReportType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            ReportType::SmartContractReview => "SmartContractReview",
+            ReportType::OnChainIntelligence => "OnChainIntelligence",
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -75,15 +76,16 @@ pub enum ReportStatus {
     Archived,
 }
 
-impl ToString for ReportStatus {
-    fn to_string(&self) -> String {
-        match self {
-            ReportStatus::Pending => "Pending".to_string(),
-            ReportStatus::Generating => "Generating".to_string(),
-            ReportStatus::Completed => "Completed".to_string(),
-            ReportStatus::Failed => "Failed".to_string(),
-            ReportStatus::Archived => "Archived".to_string(),
-        }
+impl std::fmt::Display for ReportStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            ReportStatus::Pending => "Pending",
+            ReportStatus::Generating => "Generating",
+            ReportStatus::Completed => "Completed",
+            ReportStatus::Failed => "Failed",
+            ReportStatus::Archived => "Archived",
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -144,7 +146,7 @@ pub fn load_report_configuration() -> Result<ReportConfig, ReportError> {
     let config = Config::builder()
         .add_source(ConfigFile::with_name("configs/app.toml").required(false))
         .build()
-        .map_err(|e| ReportError::ConfigurationError(e.to_string()))?;
+        .map_err(|e| ReportError::Configuration(e.to_string()))?;
 
     let output_dir = config.get_string("reports.output_dir").unwrap_or_else(|_| "storage/reports".to_string());
     let template_dir = config.get_string("reports.template_dir").unwrap_or_else(|_| "templates".to_string());
@@ -179,7 +181,7 @@ impl FilenameGenerator {
 
     pub fn validate_filename(filename: &str) -> Result<(), ReportError> {
         if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
-            return Err(ReportError::StorageError("Invalid filename containing traversal sequences".into()));
+            return Err(ReportError::Storage("Invalid filename containing traversal sequences".into()));
         }
         Ok(())
     }
@@ -259,7 +261,7 @@ impl PDFRenderer {
         let pdf_bytes: Vec<u8> = doc.with_pages(vec![page]).save(&PdfSaveOptions::default(), &mut warnings);
 
         std::fs::write(output_path, pdf_bytes)
-            .map_err(|e| ReportError::PDFError(format!("Failed to save PDF: {}", e)))?;
+            .map_err(|e| ReportError::Pdf(format!("Failed to save PDF: {}", e)))?;
 
         Ok(())
     }
@@ -294,13 +296,13 @@ impl ReportIndex {
 
     async fn persist(&self, snapshot: &HashMap<String, Report>) -> Result<(), ReportError> {
         if let Some(parent) = self.index_path.parent() {
-            fs::create_dir_all(parent).await.map_err(|e| ReportError::StorageError(e.to_string()))?;
+            fs::create_dir_all(parent).await.map_err(|e| ReportError::Storage(e.to_string()))?;
         }
         let bytes = serde_json::to_vec_pretty(snapshot)
-            .map_err(|e| ReportError::SerializationError(e.to_string()))?;
+            .map_err(|e| ReportError::Serialization(e.to_string()))?;
         let tmp_path = self.index_path.with_extension("json.tmp");
-        fs::write(&tmp_path, &bytes).await.map_err(|e| ReportError::StorageError(e.to_string()))?;
-        fs::rename(&tmp_path, &self.index_path).await.map_err(|e| ReportError::StorageError(e.to_string()))?;
+        fs::write(&tmp_path, &bytes).await.map_err(|e| ReportError::Storage(e.to_string()))?;
+        fs::rename(&tmp_path, &self.index_path).await.map_err(|e| ReportError::Storage(e.to_string()))?;
         Ok(())
     }
 
@@ -338,7 +340,7 @@ impl ReportStorage {
     pub async fn ensure_dir(&self) -> Result<(), ReportError> {
         fs::create_dir_all(&self.base_dir)
             .await
-            .map_err(|e| ReportError::StorageError(e.to_string()))
+            .map_err(|e| ReportError::Storage(e.to_string()))
     }
 
     pub async fn save_file(&self, filename: &str, content: &[u8]) -> Result<String, ReportError> {
@@ -348,7 +350,7 @@ impl ReportStorage {
         let path = self.base_dir.join(filename);
         fs::write(&path, content)
             .await
-            .map_err(|e| ReportError::StorageError(e.to_string()))?;
+            .map_err(|e| ReportError::Storage(e.to_string()))?;
 
         Ok(path.to_string_lossy().into_owned())
     }
@@ -359,7 +361,7 @@ impl ReportStorage {
         if path.exists() {
             fs::remove_file(&path)
                 .await
-                .map_err(|e| ReportError::StorageError(e.to_string()))?;
+                .map_err(|e| ReportError::Storage(e.to_string()))?;
         }
         Ok(())
     }

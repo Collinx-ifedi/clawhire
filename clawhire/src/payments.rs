@@ -611,7 +611,15 @@ impl PaymentEngine {
             }
             Ok(_) => {}
             Err(e) => {
-                warn!("Failed to watch invoice {}: {}", invoice.invoice_id, e);
+                // Previously this only logged a warning and still returned
+                // Ok(invoice) unchanged - meaning the CLI process exited 0
+                // and looked identical to a normal "not paid yet" check, so
+                // RPC failures (rate limits, network issues, etc.) were
+                // invisible to anything watching stdout/exit code. Propagate
+                // it as a real command failure instead, so it surfaces via
+                // the existing "non-zero exit + stderr message" failure path.
+                error!("Failed to watch invoice {}: {}", invoice.invoice_id, e);
+                return Err(e);
             }
         }
 

@@ -70,7 +70,7 @@ retry_delay_seconds = 2
 
 [wallet]
 
-merchant_wallet = "YOUR_SOLANA_WALLET_ADDRESS"
+merchant_wallet = "EmQDFGcDfuuRERSM8DEDNrF1tfEZzqbVRQsqroM6UptZ "
 
 currency = "SOL"
 
